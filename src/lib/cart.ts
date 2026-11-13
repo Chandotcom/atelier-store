@@ -35,7 +35,8 @@ export type CartActionResult = { ok: true; count: number } | { ok: false; messag
  * The header shows the bag count on every page, including the fully static
  * product and category pages, so it can't be rendered from the request on the
  * server. Instead the cart actions mirror the count into this readable cookie
- * and the header reads it in the browser.
+ * and the header reads it in the browser. Only the server writes it, always
+ * from a fresh database count.
  */
 export const CART_COUNT_COOKIE = "altiere_cart_count";
 

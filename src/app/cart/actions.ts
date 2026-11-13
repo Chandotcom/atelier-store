@@ -39,6 +39,21 @@ async function syncCount(cartId: string): Promise<number> {
   return count;
 }
 
+/**
+ * Re-reads the bag's count from the database and resets the header cookie.
+ * For when the cookie may have drifted, e.g. an order was paid in another tab.
+ */
+export async function refreshCartCount(): Promise<number> {
+  const cartId = await getCartId();
+  if (!cartId) {
+    (await cookies()).set(CART_COUNT_COOKIE, "0", cookieOptions);
+    return 0;
+  }
+  const count = await syncCount(cartId);
+  refresh();
+  return count;
+}
+
 async function stockFor(productId: number, size: string | null): Promise<number | null> {
   const [row] = await db
     .select({ quantity: productStock.quantity })

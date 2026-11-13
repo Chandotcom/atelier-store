@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CartCountSync } from "@/components/cart-count-sync";
 import { CartLineItem } from "@/components/cart-line";
+import { CheckoutButton } from "@/components/checkout-button";
 import { getCart } from "@/lib/cart-data";
 import { formatPrice } from "@/lib/catalog";
 
@@ -72,14 +73,9 @@ async function CartView() {
           </div>
         </dl>
 
-        {/* Checkout isn't built yet. */}
-        <button type="button" className="btn btn-primary btn-lg btn-block mt-8" disabled>
-          Checkout
-        </button>
+        <CheckoutButton blocked={blocked} />
         <p className="text-caption text-muted mt-3">
-          {blocked
-            ? "Some items are no longer available in the quantity selected."
-            : "Checkout is coming soon."}
+          You&rsquo;ll enter your delivery address and pay securely on the next page.
         </p>
       </section>
     </div>
