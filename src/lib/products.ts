@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { db } from "@/db";
@@ -132,6 +132,66 @@ export async function getAccessories(): Promise<Product[]> {
   const rows = await db.query.products.findMany({
     where: inArray(products.categoryId, accessoryCategoryIds),
     orderBy: [desc(products.createdAt), desc(products.id)],
+    with: withRelations,
+  });
+  return rows.map(toProduct);
+}
+
+const SEARCH_QUERY_MAX_LENGTH = 64;
+const SEARCH_MAX_TERMS = 6;
+
+/**
+ * Lowercases, collapses whitespace and caps the length of a search query.
+ * Callers must pass the normalized form to `searchProducts`, so equivalent
+ * queries share one cache entry.
+ */
+export function normalizeSearchQuery(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, " ").slice(0, SEARCH_QUERY_MAX_LENGTH);
+}
+
+/**
+ * Products where every word of the query appears in the name, color,
+ * description, style code or category. Name matches come first, then newest.
+ */
+export async function searchProducts(query: string): Promise<Product[]> {
+  "use cache";
+  cacheTag(PRODUCTS_TAG);
+  cacheLife("hours");
+
+  const patterns = query
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, SEARCH_MAX_TERMS)
+    // Drop a plural "s" so "jackets" finds "jacket"; escape LIKE wildcards.
+    .map((term) => (term.length > 3 ? term.replace(/s$/, "") : term))
+    .map((term) => `%${term.replace(/[\\%_]/g, "\\$&")}%`);
+  if (patterns.length === 0) return [];
+
+  const rows = await db.query.products.findMany({
+    where: and(
+      ...patterns.map((pattern) =>
+        or(
+          ilike(products.name, pattern),
+          ilike(products.color, pattern),
+          ilike(products.description, pattern),
+          ilike(products.styleCode, pattern),
+          inArray(
+            products.categoryId,
+            db.select({ id: categories.id }).from(categories).where(ilike(categories.name, pattern)),
+          ),
+        ),
+      ),
+    ),
+    orderBy: [
+      desc(
+        sql.join(
+          patterns.map((pattern) => sql`${products.name} ilike ${pattern}`),
+          sql` and `,
+        ),
+      ),
+      desc(products.createdAt),
+      desc(products.id),
+    ],
     with: withRelations,
   });
   return rows.map(toProduct);
