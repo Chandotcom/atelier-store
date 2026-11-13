@@ -8,6 +8,13 @@
       "when": 1794481502310,
       "tag": "0000_careless_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794551478222,
+      "tag": "0001_black_kate_bishop",
+      "breakpoints": true
     }
   ]
 }
