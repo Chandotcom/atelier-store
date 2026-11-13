@@ -3,7 +3,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SearchIcon } from "@/components/icons";
-import { ProductCard } from "@/components/product-card";
+import { FilterableProductGrid } from "@/components/product-filters";
 import { getCategories, normalizeSearchQuery, searchProducts } from "@/lib/products";
 
 export const metadata: Metadata = { title: "Search", robots: { index: false } };
@@ -39,11 +39,8 @@ async function SearchView({ searchParams }: Pick<PageProps<"/search">, "searchPa
           <p className="text-eyebrow text-muted mb-6" role="status">
             {results.length} {results.length === 1 ? "result" : "results"} for &ldquo;{raw.trim()}&rdquo;
           </p>
-          <div className="product-grid">
-            {results.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {/* Keyed by query so filters reset when the search changes. */}
+          <FilterableProductGrid key={query} products={results} />
         </section>
       )}
     </>

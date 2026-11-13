@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Product } from "@/lib/catalog";
-import { ProductCard } from "./product-card";
+import { FilterableProductGrid } from "./product-filters";
 
 type Props = {
   /** Page title; also the current breadcrumb entry. */
@@ -30,25 +30,15 @@ export function ProductListing({ title, eyebrow, lead, products, emptyMessage }:
         </ol>
       </nav>
 
-      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6 md:mb-12">
-        <div>
-          <p className="text-eyebrow text-muted mb-3">{eyebrow}</p>
-          <h1 className="heading-headline">{title}</h1>
-          {lead && <p className="text-lead text-muted mt-4 max-w-md">{lead}</p>}
-        </div>
-        {products.length > 0 && (
-          <p className="text-eyebrow text-muted shrink-0">
-            {products.length} {products.length === 1 ? "piece" : "pieces"}
-          </p>
-        )}
+      <header className="mb-8">
+        <p className="text-eyebrow text-muted mb-3">{eyebrow}</p>
+        <h1 className="heading-headline">{title}</h1>
+        {lead && <p className="text-lead text-muted mt-4 max-w-md">{lead}</p>}
       </header>
 
       {products.length > 0 ? (
-        <div className="product-grid">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        // Sort, filters and the piece count live in the grid's toolbar.
+        <FilterableProductGrid products={products} />
       ) : (
         <div className="divider py-section text-center">
           <p className="text-muted">{emptyMessage}</p>
