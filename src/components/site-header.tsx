@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { primaryNav } from "@/lib/catalog";
+import { PRIMARY_NAV_INLINE_COUNT, primaryNav } from "@/lib/catalog";
 import { BagIcon, SearchIcon, UserIcon } from "./icons";
 import { MobileMenu } from "./mobile-menu";
 
@@ -20,9 +20,12 @@ export function SiteHeader() {
           </div>
           <nav aria-label="Primary" className="hidden lg:block">
             <ul className="flex items-center gap-6 xl:gap-8">
-              {primaryNav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="text-eyebrow link-quiet">
+              {primaryNav.map((item, i) => (
+                <li
+                  key={item.href}
+                  className={i >= PRIMARY_NAV_INLINE_COUNT ? "hidden 2xl:block" : undefined}
+                >
+                  <Link href={item.href} className="text-eyebrow link-quiet whitespace-nowrap">
                     {item.label}
                   </Link>
                 </li>

@@ -22,7 +22,7 @@ export default function Home() {
         eyebrow="The Knitwear Edit"
         title="Softness, made to last"
         body="Cashmere, alpaca and brushed cotton, knitted in small runs and finished by hand. Layering pieces built for the long season ahead."
-        cta={{ label: "Shop knitwear", href: "/women/knitwear" }}
+        cta={{ label: "Shop knitwear", href: "/knitwear" }}
         image={knitwearImage}
       />
       <AccessoriesRow />
@@ -31,7 +31,7 @@ export default function Home() {
         eyebrow="Tailoring"
         title="The considered suit"
         body="Half-canvassed jackets and trousers cut from Italian wool, with fittings available by appointment in every boutique."
-        cta={{ label: "Book an appointment", href: "/appointments" }}
+        cta={{ label: "Shop ready-to-wear", href: "/ready-to-wear" }}
         image={tailoringImage}
       />
       <Services />
@@ -68,11 +68,11 @@ function Hero() {
             The Quiet Season
           </h1>
           <div className="mt-1 flex w-full max-w-sm gap-2 sm:mt-2 sm:w-auto sm:max-w-none sm:gap-3">
-            <Link href="/women" className="btn btn-inverse btn-sm flex-1 sm:btn-md sm:flex-none">
-              Shop women
+            <Link href="/new" className="btn btn-inverse btn-sm flex-1 sm:btn-md sm:flex-none">
+              New arrivals
             </Link>
-            <Link href="/men" className="btn btn-inverse btn-sm flex-1 sm:btn-md sm:flex-none">
-              Shop men
+            <Link href="/ready-to-wear" className="btn btn-inverse btn-sm flex-1 sm:btn-md sm:flex-none">
+              Ready-to-wear
             </Link>
           </div>
         </div>
@@ -89,7 +89,7 @@ function Intro() {
         Wardrobe pieces in muted tones, cut generously and made to be worn for
         years.
       </h2>
-      <Link href="/collection" className="link-cta mt-8 inline-block">
+      <Link href="/ready-to-wear" className="link-cta mt-8 inline-block">
         Discover the collection
       </Link>
     </section>
@@ -190,7 +190,7 @@ async function AccessoriesRow() {
       <SectionHeader
         eyebrow="Finishing touches"
         title="Jewelry & accessories"
-        link={{ label: "Shop all", href: "/jewelry" }}
+        link={{ label: "Shop jewelry", href: "/fine-jewelry" }}
       />
       <div className="scroll-row -mx-gutter px-gutter md:mx-0 md:px-0">
         {accessories.map((p) => (

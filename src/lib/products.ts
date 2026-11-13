@@ -1,9 +1,9 @@
-import { desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 import { db } from "@/db";
 import { categories, products } from "@/db/schema";
-import type { Product } from "./catalog";
+import type { Category, Product } from "./catalog";
 
 /*
  * Product queries. Server-only: client components import types and pure
@@ -72,6 +72,37 @@ export async function getProductSlugs(): Promise<string[]> {
 
   const rows = await db.select({ slug: products.slug }).from(products);
   return rows.map((r) => r.slug);
+}
+
+export async function getCategories(): Promise<Category[]> {
+  "use cache";
+  cacheTag(PRODUCTS_TAG);
+  cacheLife("hours");
+
+  const rows = await db
+    .select({ slug: categories.slug, label: categories.name })
+    .from(categories)
+    .orderBy(asc(categories.id));
+  return rows;
+}
+
+/** Every product in a category, newest first. Empty for an unknown slug. */
+export async function getProductsByCategory(slug: string): Promise<Product[]> {
+  "use cache";
+  cacheTag(PRODUCTS_TAG);
+  cacheLife("hours");
+
+  const categoryIds = db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.slug, slug));
+
+  const rows = await db.query.products.findMany({
+    where: inArray(products.categoryId, categoryIds),
+    orderBy: [desc(products.createdAt), desc(products.id)],
+    with: withRelations,
+  });
+  return rows.map(toProduct);
 }
 
 /** Newest products first. */
