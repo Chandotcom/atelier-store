@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { addToCart } from "@/app/cart/actions";
+import { notifyCartChanged } from "@/lib/cart";
 import { stockLabel, stockStatus, type Product, type StockStatus } from "@/lib/catalog";
 import { HeartIcon } from "./icons";
 
@@ -24,14 +27,17 @@ function StockIndicator({ quantity, prefix }: { quantity: number; prefix?: strin
 }
 
 /**
- * Size selection, stock state and purchase actions. There is no cart or
- * wishlist backend yet, so the actions only acknowledge locally.
+ * Size selection, stock state and purchase actions. "Add to bag" writes to
+ * the real cart. There is no wishlist or back-in-stock backend yet, so those
+ * two only acknowledge locally.
  */
 export function ProductPurchase({ product }: { product: Product }) {
   const { sizes } = product;
   const [size, setSize] = useState<string | null>(null);
   const [needsSize, setNeedsSize] = useState(false);
   const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [adding, startAdding] = useTransition();
   const [saved, setSaved] = useState(false);
   const [notify, setNotify] = useState<"idle" | "form" | "done">("idle");
 
@@ -45,7 +51,14 @@ export function ProductPurchase({ product }: { product: Product }) {
       setNeedsSize(true);
       return;
     }
-    setAdded(true);
+    setAddError(null);
+    startAdding(async () => {
+      // The page's stock figures are cached; the action checks the live stock.
+      const result = await addToCart(product.id, selected?.label ?? null);
+      notifyCartChanged();
+      setAdded(result.ok);
+      if (!result.ok) setAddError(result.message);
+    });
   }
 
   return (
@@ -70,6 +83,7 @@ export function ProductPurchase({ product }: { product: Product }) {
                     setSize(s.label);
                     setNeedsSize(false);
                     setAdded(false);
+                    setAddError(null);
                   }}
                   className={`h-11 border text-caption transition-colors ${
                     active
@@ -130,9 +144,27 @@ export function ProductPurchase({ product }: { product: Product }) {
           </>
         ) : (
           <>
-            <button type="button" className="btn btn-primary btn-lg btn-block" onClick={addToBag}>
-              {added ? "Added to bag" : "Add to bag"}
+            <button
+              type="button"
+              className="btn btn-primary btn-lg btn-block"
+              onClick={addToBag}
+              disabled={adding}
+            >
+              {adding ? "Adding…" : "Add to bag"}
             </button>
+            {added && !adding && (
+              <p className="text-caption py-1" role="status">
+                Added to your bag.{" "}
+                <Link href="/cart" className="link">
+                  View bag
+                </Link>
+              </p>
+            )}
+            {addError && (
+              <p className="text-caption text-sale py-1" role="alert">
+                {addError}
+              </p>
+            )}
             <button
               type="button"
               className="btn btn-secondary btn-lg btn-block"

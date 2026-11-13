@@ -7,4 +7,5 @@
 // Re-run it after changing auth plugins or fields; don't edit it by hand.
 
 export * from "./auth";
+export * from "./cart";
 export * from "./catalog";

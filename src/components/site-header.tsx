@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PRIMARY_NAV_INLINE_COUNT, primaryNav } from "@/lib/catalog";
-import { BagIcon, SearchIcon, UserIcon } from "./icons";
+import { CartLink } from "./cart-link";
+import { SearchIcon, UserIcon } from "./icons";
 import { MobileMenu } from "./mobile-menu";
 
 export function SiteHeader() {
@@ -45,9 +46,7 @@ export function SiteHeader() {
           <Link href="/account" className="btn-icon hidden sm:inline-flex" aria-label="Account">
             <UserIcon />
           </Link>
-          <Link href="/cart" className="btn-icon -mr-2" aria-label="Shopping bag, 0 items">
-            <BagIcon />
-          </Link>
+          <CartLink />
         </div>
       </header>
     </>

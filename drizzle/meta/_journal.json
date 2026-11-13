@@ -15,6 +15,13 @@
       "when": 1794551478222,
       "tag": "0001_black_kate_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794552285079,
+      "tag": "0002_silky_midnight",
+      "breakpoints": true
     }
   ]
 }
