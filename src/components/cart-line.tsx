@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { removeCartItem, setCartItemQuantity } from "@/app/cart/actions";
+import { removeCartItem, setCartItemQuantity } from "@/app/(store)/cart/actions";
 import { notifyCartChanged, type CartActionResult, type CartLine } from "@/lib/cart";
 import { formatPrice } from "@/lib/catalog";
 

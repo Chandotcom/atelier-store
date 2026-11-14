@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { addToCart } from "@/app/cart/actions";
+import { addToCart } from "@/app/(store)/cart/actions";
 import { notifyCartChanged } from "@/lib/cart";
 import { stockLabel, stockStatus, type Product, type StockStatus } from "@/lib/catalog";
 import { WishlistButton } from "./wishlist-button";

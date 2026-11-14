@@ -1,11 +1,11 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { after } from "next/server";
 import type Stripe from "stripe";
 
 import { db } from "@/db";
 import { orderItems, orders, type ShippingAddressRow } from "@/db/schema";
 import type { CartLine } from "./cart";
-import { orderConfirmationEmail, sendEmail } from "./email";
+import { orderConfirmationEmail, orderShippedEmail, sendEmail } from "./email";
 
 /*
  * Order writes and reads. Server-only, and nothing here is cached.
@@ -146,32 +146,75 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session): 
   return true;
 }
 
+/** A delivery address as display lines, with blank fields dropped. */
+export function addressLines(address: ShippingAddressRow | null): string[] {
+  return [
+    address?.name,
+    address?.line1,
+    address?.line2,
+    [address?.city, address?.state, address?.postalCode].filter(Boolean).join(", "),
+    address?.country,
+  ].filter((line): line is string => Boolean(line));
+}
+
 /** Never throws: a failed email must not undo or block a paid order. */
 async function sendOrderConfirmation(sessionId: string): Promise<void> {
   try {
     const order = await getOrderBySessionId(sessionId);
     if (!order?.email) return;
 
-    const address = order.shippingAddress;
     await sendEmail({
       ...orderConfirmationEmail({
         to: order.email,
         orderNumber: formatOrderNumber(order.id),
         items: order.items,
         totalCents: order.totalCents,
-        address: [
-          address?.name,
-          address?.line1,
-          address?.line2,
-          [address?.city, address?.state, address?.postalCode].filter(Boolean).join(", "),
-          address?.country,
-        ].filter((line): line is string => Boolean(line)),
+        address: addressLines(order.shippingAddress),
       }),
       idempotencyKey: `order-confirmation/${order.id}`,
     });
   } catch (error) {
     console.error("[orders] Could not send the order confirmation email", error);
   }
+}
+
+/**
+ * Marks a paid order shipped and emails the customer. Returns false if the
+ * order isn't paid or was already shipped: the guard is in the statement, so
+ * a double submit can't ship, or email, twice.
+ */
+export async function shipOrder(orderId: number, trackingNumber: string | null): Promise<boolean> {
+  const [order] = await db
+    .update(orders)
+    .set({ shippedAt: new Date(), trackingNumber })
+    .where(and(eq(orders.id, orderId), eq(orders.status, "paid"), isNull(orders.shippedAt)))
+    .returning();
+  if (!order) return false;
+
+  const { email } = order;
+  if (email) {
+    const send = async () => {
+      try {
+        await sendEmail({
+          ...orderShippedEmail({
+            to: email,
+            orderNumber: formatOrderNumber(order.id),
+            trackingNumber,
+            address: addressLines(order.shippingAddress),
+          }),
+          idempotencyKey: `order-shipped/${order.id}`,
+        });
+      } catch (error) {
+        console.error("[orders] Could not send the shipping email", error);
+      }
+    };
+    try {
+      after(send);
+    } catch {
+      await send();
+    }
+  }
+  return true;
 }
 
 /** For a Stripe payment page that expired without payment. */

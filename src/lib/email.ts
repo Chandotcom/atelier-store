@@ -181,6 +181,50 @@ export function orderConfirmationEmail(order: OrderEmailInput): Email {
   };
 }
 
+export function orderShippedEmail(order: {
+  to: string;
+  orderNumber: string;
+  trackingNumber: string | null;
+  /** Address lines, already filtered of blanks. */
+  address: string[];
+}): Email {
+  const tracking = order.trackingNumber && `Tracking number: ${order.trackingNumber}`;
+  return {
+    to: order.to,
+    subject: `Your Altiere order ${order.orderNumber} has shipped`,
+    text: [
+      `Good news: your order ${order.orderNumber} is on its way.`,
+      tracking,
+      order.address.length > 0 && `Delivering to:\n${order.address.join("\n")}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+    html: layout(`
+      <p style="${styles.eyebrow}">Order ${escapeHtml(order.orderNumber)}</p>
+      <h1 style="${styles.heading}">Your order is on its way</h1>
+      <p style="${styles.text}">We&rsquo;ve handed your order to the courier.</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #e3e3e3">
+        ${
+          order.trackingNumber
+            ? `<tr>
+          <td style="${styles.cell};${styles.label}">Tracking number</td>
+          <td style="${styles.cell};text-align:right">${escapeHtml(order.trackingNumber)}</td>
+        </tr>`
+            : ""
+        }
+        ${
+          order.address.length > 0
+            ? `<tr>
+          <td style="padding:16px 0;vertical-align:top;${styles.label}">Delivering to</td>
+          <td style="padding:16px 0;text-align:right;color:#6b6b6b">${order.address.map(escapeHtml).join("<br>")}</td>
+        </tr>`
+            : ""
+        }
+      </table>
+    `),
+  };
+}
+
 /* ── HTML helpers ─────────────────────────────────────────────────────── */
 
 // Email clients ignore stylesheets, so every style is inline.

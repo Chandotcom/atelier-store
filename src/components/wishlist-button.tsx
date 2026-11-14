@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useSyncExternalStore, useTransition } from "react";
-import { setWishlisted } from "@/app/wishlist/actions";
+import { setWishlisted } from "@/app/(store)/wishlist/actions";
 import {
   getServerWishlistSnapshot,
   getWishlistSnapshot,

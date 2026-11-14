@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins";
 import { after } from "next/server";
 
 import { db, schema } from "@/db";
@@ -46,6 +47,9 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    // Adds `role` to users. Staff accounts have role "admin" (see
+    // `requireAdmin` in ./session.ts); `npm run admin:grant` sets it.
+    admin(),
     // Lets server actions set auth cookies. Keep this as the last plugin.
     nextCookies(),
   ],
