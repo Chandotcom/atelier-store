@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Hanken_Grotesk } from "next/font/google";
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 // UI / body: neutral grotesk (variable font).
@@ -35,9 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <SiteHeader />
+        {/* No header or footer here: the storefront adds its own in (store)/layout.tsx
+            and the admin area has a separate shell in admin/layout.tsx. */}
         {children}
-        <SiteFooter />
       </body>
     </html>
   );

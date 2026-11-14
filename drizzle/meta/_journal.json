@@ -8,6 +8,41 @@
       "when": 1794481502310,
       "tag": "0000_careless_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794551478222,
+      "tag": "0001_black_kate_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794552285079,
+      "tag": "0002_silky_midnight",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794552833965,
+      "tag": "0003_wide_warstar",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794555206612,
+      "tag": "0004_productive_kitty_pryde",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794642706935,
+      "tag": "0005_free_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

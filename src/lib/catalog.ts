@@ -47,12 +47,19 @@ export type NavItem = { label: string; href: string };
 
 export const primaryNav: NavItem[] = [
   { label: "New In", href: "/new" },
-  { label: "Women", href: "/women" },
-  { label: "Men", href: "/men" },
+  { label: "Ready-to-wear", href: "/ready-to-wear" },
   { label: "Bags", href: "/bags" },
-  { label: "Jewelry & Watches", href: "/jewelry" },
-  { label: "Gifts", href: "/gifts" },
+  { label: "Shoes", href: "/shoes" },
+  { label: "Jewelry", href: "/fine-jewelry" },
+  { label: "Knitwear", href: "/knitwear" },
+  { label: "Watches", href: "/watches" },
 ];
+
+/**
+ * How many `primaryNav` items fit beside the wordmark in the desktop header
+ * below the 2xl breakpoint. The rest show from 2xl, and always in the drawer.
+ */
+export const PRIMARY_NAV_INLINE_COUNT = 5;
 
 /* ── Stock ────────────────────────────────────────────────────────────── */
 
@@ -79,16 +86,16 @@ export function stockLabel(quantity: number): string {
 
 export const featuredCollections: Collection[] = [
   {
-    slug: "women",
-    title: "Women",
+    slug: "ready-to-wear",
+    title: "Ready-to-wear",
     eyebrow: "Autumn–Winter",
     image: unsplash("1485968579580-b6d095142e6e", "portrait"),
     alt: "Woman in a tartan coat walking down a city street",
   },
   {
-    slug: "men",
-    title: "Men",
-    eyebrow: "Autumn–Winter",
+    slug: "new",
+    title: "New arrivals",
+    eyebrow: "Just in",
     image: unsplash("1617137968427-85924c800a22", "portrait"),
     alt: "Man in a navy suit walking past a glass facade",
   },
