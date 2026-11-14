@@ -17,7 +17,7 @@ export type ProductInput = {
   details: string[];
   /** Short label over the listing image, e.g. "New". Null for none. */
   badge: string | null;
-  /** The first image is the listing image. `src` is an Unsplash photo link or ID. */
+  /** The first image is the listing image. `src` is an uploaded image URL, or an Unsplash photo link or ID. */
   images: { src: string; alt: string }[];
   /**
    * Either one row with `size` null (a one-size product) or one row per size,
