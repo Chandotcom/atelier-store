@@ -9,7 +9,7 @@ import type { AdminResult, ProductInput, SaveProductResult } from "@/lib/admin";
 import { shipOrder } from "@/lib/orders";
 import { PRODUCTS_TAG } from "@/lib/products";
 import { ADMIN_ROLE, getCurrentUser, isAdminRequest } from "@/lib/session";
-import { UNSPLASH_QUERY, unsplash } from "@/lib/unsplash";
+import { normalizeProductImage } from "@/lib/images";
 
 /*
  * Admin mutations. Server Actions are public endpoints, so each one checks
@@ -27,29 +27,6 @@ function text(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 && trimmed.length <= max ? trimmed : null;
-}
-
-/**
- * Images are served through the Next image optimizer, which only allows
- * Unsplash photos with the crop presets in `src/lib/unsplash.ts`. An image
- * that already has an allowed preset is kept as it is (seeded galleries use
- * close-up crops); anything else is reduced to its photo ID and given the
- * standard product crop. Returns null if no photo ID can be found.
- */
-function normalizeImage(src: string): string | null {
-  const value = src.trim();
-  try {
-    const url = new URL(value);
-    if (url.hostname !== "images.unsplash.com") return null;
-    const id = /^\/photo-([\w-]+)$/.exec(url.pathname)?.[1];
-    if (!id) return null;
-    const allowed = (Object.values(UNSPLASH_QUERY) as string[]).includes(url.search);
-    return allowed ? url.toString() : unsplash(id, "product");
-  } catch {
-    // Not a URL: accept a bare photo ID such as "1591047139829-d91aecb6caea".
-    const id = /^(?:photo-)?(\d{10,}-[\w-]+)$/.exec(value)?.[1];
-    return id ? unsplash(id, "product") : null;
-  }
 }
 
 function slugify(name: string): string {
@@ -122,10 +99,12 @@ function validate(input: ProductInput): ValidProduct | string {
   }
   const images: ProductImageRow[] = [];
   for (const [i, image] of input.images.entries()) {
-    const src = typeof image?.src === "string" ? normalizeImage(image.src) : null;
+    const src = typeof image?.src === "string" ? normalizeProductImage(image.src) : null;
     if (!src) {
-      return `Image ${i + 1} is not an Unsplash photo. Use a link that starts with https://images.unsplash.com/photo-`;
+      return `Image ${i + 1} can't be used. Upload a photo, or use an Unsplash link that starts with https://images.unsplash.com/photo-`;
     }
+    // The gallery keys its slides by URL, and a repeat adds nothing.
+    if (images.some((other) => other.src === src)) return `Image ${i + 1} is already in the gallery.`;
     const alt = text(image.alt, 200);
     if (!alt) return `Describe image ${i + 1} (alt text, up to 200 characters).`;
     images.push({ src, alt });

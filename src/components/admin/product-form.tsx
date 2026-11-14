@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type FormEvent } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { deleteProduct, saveProduct } from "@/app/admin/actions";
 import { PlusIcon } from "@/components/icons";
 import type { ProductInput } from "@/lib/admin";
 import type { AdminProduct } from "@/lib/admin-data";
 import { FormError, Input, Labelled, Section } from "./fields";
+import { ImageUpload, type ImageRow } from "./image-upload";
 
 type Props = {
   /** Omit to create a product. */
@@ -14,7 +15,6 @@ type Props = {
   categories: { id: number; name: string }[];
 };
 
-type ImageRow = { src: string; alt: string };
 type SizeRow = { size: string; quantity: string };
 
 const FAILED = "We couldn't reach the server. Please try again.";
@@ -37,11 +37,29 @@ export function ProductForm({ product, categories }: Props) {
     String(product?.stock.find((s) => s.size === null)?.quantity ?? 0),
   );
   const [images, setImages] = useState<ImageRow[]>(
-    product && product.images.length > 0 ? product.images : [{ src: "", alt: "" }],
+    () => product?.images.map((image, i) => ({ ...image, key: `saved-${i}` })) ?? [],
   );
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /** New images start with the product's name and color as their alt text. */
+  function defaultAlt() {
+    const field = (name: string) =>
+      (formRef.current?.elements.namedItem(name) as HTMLInputElement | null)?.value.trim() ?? "";
+    const name = field("name");
+    const color = field("color");
+    return name && color ? `${name} in ${color}` : name;
+  }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (images.some((row) => row.progress !== undefined)) {
+      setError("Wait for the images to finish uploading.");
+      return;
+    }
+    if (images.some((row) => row.error)) {
+      setError("Remove the images that failed to upload, or upload them again.");
+      return;
+    }
     const data = new FormData(e.currentTarget);
     const value = (name: string) => String(data.get(name) ?? "");
 
@@ -59,7 +77,7 @@ export function ProductForm({ product, categories }: Props) {
         .map((line) => line.trim())
         .filter(Boolean),
       badge: value("badge").trim() || null,
-      images,
+      images: images.map(({ src, alt }) => ({ src, alt })),
       stock: sized
         ? sizes.map((s) => ({ size: s.size, quantity: Number(s.quantity) }))
         : [{ size: null, quantity: Number(oneSizeQuantity) }],
@@ -101,7 +119,7 @@ export function ProductForm({ product, categories }: Props) {
     rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+    <form ref={formRef} onSubmit={onSubmit} className="mt-6 grid items-start gap-4 lg:grid-cols-2">
       <div className="space-y-4">
         <Section title="Details">
           <Input label="Name" name="name" defaultValue={product?.name} maxLength={120} required />
@@ -236,44 +254,9 @@ export function ProductForm({ product, categories }: Props) {
 
         <Section
           title="Images"
-          description="The first image is shown in listings. Only Unsplash photos can be used: paste a link that starts with https://images.unsplash.com/photo-"
+          description="Up to 8 images. The first one is shown in listings."
         >
-          <div className="space-y-6">
-            {images.map((row, i) => (
-              <div key={i} className="space-y-4 rounded-[0.5rem] border bg-surface/50 p-4">
-                <Input
-                  label={`Image ${i + 1} link`}
-                  value={row.src}
-                  onChange={(e) => setImages(update(images, i, { src: e.target.value }))}
-                  required
-                />
-                <Input
-                  label="Description (alt text)"
-                  value={row.alt}
-                  onChange={(e) => setImages(update(images, i, { alt: e.target.value }))}
-                  maxLength={200}
-                  required
-                />
-                <button
-                  type="button"
-                  className="cursor-pointer text-[0.8125rem] text-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                  disabled={images.length === 1}
-                  onClick={() => setImages(images.filter((_, n) => n !== i))}
-                >
-                  Remove<span className="sr-only"> image {i + 1}</span>
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="admin-btn admin-btn-secondary"
-            disabled={images.length >= 8}
-            onClick={() => setImages([...images, { src: "", alt: "" }])}
-          >
-            <PlusIcon className="size-4" strokeWidth={1.5} />
-            Add image
-          </button>
+          <ImageUpload images={images} onChange={setImages} defaultAlt={defaultAlt} />
         </Section>
       </div>
 
