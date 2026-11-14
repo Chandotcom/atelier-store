@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { OrderItems } from "@/components/order-items";
 import { formatOrderNumber, getOrderBySessionId } from "@/lib/orders";
 
-export const metadata: Metadata = { title: "Order confirmed", robots: { index: false } };
+export const metadata: Metadata = { title: "Checkout confirmation", robots: { index: false } };
 
 export default function CheckoutSuccessPage({ searchParams }: PageProps<"/checkout/success">) {
   return (
@@ -22,9 +22,10 @@ async function Confirmation({ searchParams }: Pick<PageProps<"/checkout/success"
   const { session_id: sessionId } = await searchParams;
   if (typeof sessionId !== "string") notFound();
 
-  // Read-only: the order was marked paid by /checkout/return or the webhook.
+  // Read-only: delayed payments remain pending until the webhook confirms them.
   const order = await getOrderBySessionId(sessionId);
-  if (!order || order.status !== "paid") notFound();
+  if (!order || (order.status !== "paid" && order.status !== "pending")) notFound();
+  const processing = order.status === "pending";
 
   const address = order.shippingAddress;
   const cityLine = [address?.city, address?.state, address?.postalCode].filter(Boolean).join(", ");
@@ -32,30 +33,40 @@ async function Confirmation({ searchParams }: Pick<PageProps<"/checkout/success"
   return (
     <>
       <p className="text-eyebrow text-muted">Order {formatOrderNumber(order.id)}</p>
-      <h1 className="heading-headline mt-4">Thank you for your order</h1>
+      <h1 className="heading-headline mt-4">
+        {processing ? "Your payment is processing" : "Thank you for your order"}
+      </h1>
       <p className="text-muted mt-4">
-        Your payment was received
-        {order.email && (
+        {processing
+          ? "We’re waiting for your payment to clear. Your order will be confirmed once payment is received."
+          : "Your payment was received"}
+        {!processing && order.email && (
           <>
             {" "}
             and a receipt will be sent to <span className="text-ink">{order.email}</span>
           </>
         )}
-        .
+        {!processing && "."}
       </p>
 
       <section aria-label="Items ordered" className="mt-10">
         <OrderItems order={order} />
       </section>
 
-      {address && (
+      {!processing && address && (
         <section aria-label="Delivery address" className="mt-10">
           <h2 className="text-label font-sans">Delivering to</h2>
           <address className="text-muted mt-3 not-italic">
-            {[address.name, address.line1, address.line2, cityLine, address.country]
-              .filter(Boolean)
-              .map((line) => (
-                <span key={line} className="block">
+            {Object.entries({
+              name: address.name,
+              line1: address.line1,
+              line2: address.line2,
+              city: cityLine,
+              country: address.country,
+            })
+              .filter(([, value]) => Boolean(value))
+              .map(([field, line]) => (
+                <span key={field} className="block">
                   {line}
                 </span>
               ))}

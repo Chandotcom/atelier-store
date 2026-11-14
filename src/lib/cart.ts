@@ -41,6 +41,7 @@ export type CartActionResult = { ok: true; count: number } | { ok: false; messag
 export const CART_COUNT_COOKIE = "altiere_cart_count";
 
 const CART_CHANGE_EVENT = "altiere:cart-change";
+const CART_CHANGE_STORAGE_KEY = "altiere:cart-change";
 
 /** Browser only. */
 export function readCartCount(): number {
@@ -51,10 +52,24 @@ export function readCartCount(): number {
 /** Browser only. Call after a cart action resolves so the header count updates. */
 export function notifyCartChanged(): void {
   window.dispatchEvent(new Event(CART_CHANGE_EVENT));
+  try {
+    window.localStorage.setItem(CART_CHANGE_STORAGE_KEY, crypto.randomUUID());
+  } catch {
+    // Storage may be unavailable; focus still refreshes the shared cookie.
+  }
 }
 
 /** Browser only. `useSyncExternalStore`-style subscription to cart changes. */
 export function subscribeToCart(onChange: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === CART_CHANGE_STORAGE_KEY || event.key === null) onChange();
+  };
   window.addEventListener(CART_CHANGE_EVENT, onChange);
-  return () => window.removeEventListener(CART_CHANGE_EVENT, onChange);
+  window.addEventListener("storage", onStorage);
+  window.addEventListener("focus", onChange);
+  return () => {
+    window.removeEventListener(CART_CHANGE_EVENT, onChange);
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener("focus", onChange);
+  };
 }

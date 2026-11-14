@@ -14,9 +14,9 @@ export function SiteHeader() {
       </div>
 
       <header className="site-header px-gutter">
-        {/* Left: drawer below lg, inline nav from lg */}
+        {/* Left: drawer below 2xl, inline nav from lg */}
         <div className="flex items-center">
-          <div className="lg:hidden">
+          <div className="2xl:hidden">
             <MobileMenu items={primaryNav} />
           </div>
           <nav aria-label="Primary" className="hidden lg:block">

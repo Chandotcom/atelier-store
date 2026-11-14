@@ -19,10 +19,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    // No email provider is connected yet, so the reset link is only logged
-    // to the server console. Replace this with a real send before launch.
-    sendResetPassword: async ({ user, url }) => {
-      console.log(`[auth] Password reset link for ${user.email}: ${url}`);
+    // Fail explicitly until an email delivery provider is configured.
+    sendResetPassword: async () => {
+      throw new Error("Password reset email delivery is not configured.");
     },
   },
   plugins: [

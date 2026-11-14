@@ -1,5 +1,6 @@
 "use client";
 
+import { unstable_rethrow } from "next/navigation";
 import { useState, useTransition } from "react";
 import { startCheckout } from "@/app/checkout/actions";
 
@@ -12,8 +13,13 @@ export function CheckoutButton({ blocked }: { blocked: boolean }) {
     setError(null);
     startTransition(async () => {
       // Redirects to Stripe on success, so a return value is always a failure.
-      const result = await startCheckout();
-      if (result) setError(result.message);
+      try {
+        const result = await startCheckout();
+        if (result) setError(result.message);
+      } catch (error) {
+        unstable_rethrow(error);
+        setError("We couldn’t start checkout. Please try again.");
+      }
     });
   }
 

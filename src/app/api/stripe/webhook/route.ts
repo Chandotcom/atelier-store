@@ -25,11 +25,13 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case "checkout.session.completed":
-    case "checkout.session.async_payment_succeeded":
-      if (await fulfillCheckoutSession(event.data.object)) {
+    case "checkout.session.async_payment_succeeded": {
+      const session = await getStripe().checkout.sessions.retrieve(event.data.object.id);
+      if (await fulfillCheckoutSession(session)) {
         revalidateTag(PRODUCTS_TAG, "max");
       }
       break;
+    }
     case "checkout.session.expired":
     case "checkout.session.async_payment_failed":
       await cancelOrderForSession(event.data.object.id);
