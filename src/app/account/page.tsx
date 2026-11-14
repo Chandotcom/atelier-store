@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
@@ -59,14 +60,27 @@ async function AccountDetails() {
                   {order.paidAt && <time dateTime={order.paidAt.toISOString()}>{orderDate.format(order.paidAt)}</time>}
                 </p>
                 <OrderItems order={order} />
+                <p className="text-caption text-muted mt-3" role="status">
+                  {order.shippedAt
+                    ? `Shipped ${orderDate.format(order.shippedAt)}${order.trackingNumber ? ` · Tracking ${order.trackingNumber}` : ""}`
+                    : "Preparing your order"}
+                </p>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <div className="mt-section">
-        <SignOutButton />
+      <div className="mt-section flex flex-wrap items-start gap-3">
+        {/* The header is static and can't read the session, so staff enter the admin area from here. */}
+        {user.isAdmin && (
+          <Link href="/admin" className="btn btn-primary">
+            Store admin
+          </Link>
+        )}
+        <div>
+          <SignOutButton />
+        </div>
       </div>
     </>
   );

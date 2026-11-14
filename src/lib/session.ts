@@ -35,7 +35,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 /**
  * For admin pages. Sends signed-out visitors to sign in, and shows everyone
  * else who isn't an admin the not-found page, so the admin area isn't
- * advertised. Call it before reading any admin data.
+ * advertised. Call it first, before reading any admin data.
  */
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await getCurrentUser();
