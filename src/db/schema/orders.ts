@@ -38,6 +38,9 @@ export const orders = pgTable(
     shippingAddress: jsonb("shipping_address").$type<ShippingAddressRow>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
+    /** Set when an admin marks the order shipped. Only a `paid` order can be shipped. */
+    shippedAt: timestamp("shipped_at", { withTimezone: true }),
+    trackingNumber: text("tracking_number"),
   },
   (t) => [index("orders_user_id_idx").on(t.userId)],
 );
