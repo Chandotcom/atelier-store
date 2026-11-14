@@ -29,9 +29,14 @@ export function NewsletterForm() {
         const email = String(new FormData(e.currentTarget).get("email") ?? "");
         setError(null);
         startTransition(async () => {
-          const result = await subscribeToNewsletter(email);
-          if (result.ok) setDone(true);
-          else setError(ERRORS[result.reason]);
+          try {
+            const result = await subscribeToNewsletter(email);
+            if (result.ok) setDone(true);
+            else setError(ERRORS[result.reason]);
+          } catch {
+            // The request never reached the server.
+            setError(ERRORS.unavailable);
+          }
         });
       }}
     >

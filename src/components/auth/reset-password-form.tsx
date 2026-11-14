@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
+import { connectionError, Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
 
 /** Reads the `token` (or `error`) that Better Auth appends to the reset link. */
 export function ResetPasswordForm() {
@@ -48,7 +48,9 @@ export function ResetPasswordForm() {
     setPending(true);
     setError(null);
 
-    const { error } = await authClient.resetPassword({ newPassword: password, token });
+    const { error } = await authClient
+      .resetPassword({ newPassword: password, token })
+      .catch(connectionError);
 
     setPending(false);
     if (error) {

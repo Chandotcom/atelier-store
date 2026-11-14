@@ -32,3 +32,14 @@ export function FormError({ message }: { message: string | null }) {
 
 /** Shared with the server config's default; shown as a hint and enforced by the input. */
 export const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * The auth client rejects, rather than returning `{ error }`, when the request
+ * never reaches the server. Forms add `.catch(connectionError)` so that case
+ * shows a message like any other failure instead of leaving the button disabled.
+ */
+export function connectionError() {
+  return {
+    error: { message: "We couldn't reach the server. Please check your connection and try again." },
+  };
+}

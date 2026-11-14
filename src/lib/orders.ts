@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { after } from "next/server";
 import type Stripe from "stripe";
 
 import { db } from "@/db";
@@ -131,7 +132,17 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session): 
 
   // Only the call that marked the order paid sends the confirmation, so the
   // webhook and the return route can't both email the customer.
-  if (result.rows.length > 0) await sendOrderConfirmation(session.id);
+  if (result.rows.length > 0) {
+    const send = () => sendOrderConfirmation(session.id);
+    try {
+      // After the response, so the customer's redirect to the confirmation
+      // page doesn't wait on the email provider.
+      after(send);
+    } catch {
+      // Not inside a request (a script, for example): send it now instead.
+      await send();
+    }
+  }
   return true;
 }
 

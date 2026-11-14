@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Field, FormError } from "./fields";
+import { connectionError, Field, FormError } from "./fields";
 
 export function ForgotPasswordForm() {
   const [error, setError] = useState<string | null>(null);
@@ -15,10 +15,12 @@ export function ForgotPasswordForm() {
     setPending(true);
     setError(null);
 
-    const { error } = await authClient.requestPasswordReset({
-      email: String(data.get("email")),
-      redirectTo: "/reset-password",
-    });
+    const { error } = await authClient
+      .requestPasswordReset({
+        email: String(data.get("email")),
+        redirectTo: "/reset-password",
+      })
+      .catch(connectionError);
 
     setPending(false);
     if (error) {

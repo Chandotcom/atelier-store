@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import { resetWishlist } from "@/lib/wishlist";
-import { Field, FormError } from "./fields";
+import { connectionError, Field, FormError } from "./fields";
 
 export function SignInForm() {
   const router = useRouter();
@@ -18,10 +18,12 @@ export function SignInForm() {
     setPending(true);
     setError(null);
 
-    const { error } = await authClient.signIn.email({
-      email: String(data.get("email")),
-      password: String(data.get("password")),
-    });
+    const { error } = await authClient.signIn
+      .email({
+        email: String(data.get("email")),
+        password: String(data.get("password")),
+      })
+      .catch(connectionError);
 
     if (error) {
       setPending(false);

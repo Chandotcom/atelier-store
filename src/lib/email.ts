@@ -13,6 +13,9 @@ import { formatPrice } from "./catalog";
 /** Resend's shared test sender. It only delivers to the Resend account's own address. */
 const DEFAULT_FROM = "Altiere <onboarding@resend.dev>";
 
+/** Resend normally answers in well under a second; give up rather than hang a request on it. */
+const TIMEOUT_MS = 10_000;
+
 type Email = {
   to: string;
   subject: string;
@@ -39,6 +42,7 @@ export async function sendEmail(email: Email): Promise<void> {
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
@@ -72,7 +76,10 @@ export async function addNewsletterContact(email: string): Promise<void> {
   const headers = { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
   const url = "https://api.resend.com/contacts";
 
-  const existing = await fetch(`${url}/${encodeURIComponent(email)}`, { headers });
+  const existing = await fetch(`${url}/${encodeURIComponent(email)}`, {
+    headers,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
   if (existing.ok) return;
   if (existing.status !== 404) {
     throw new Error(`Resend returned ${existing.status}: ${await existing.text()}`);
@@ -81,6 +88,7 @@ export async function addNewsletterContact(email: string): Promise<void> {
   const created = await fetch(url, {
     method: "POST",
     headers,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     body: JSON.stringify({ email, unsubscribed: false }),
   });
   if (!created.ok) throw new Error(`Resend returned ${created.status}: ${await created.text()}`);

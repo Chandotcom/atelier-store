@@ -19,9 +19,14 @@ export function CartLineItem({ line }: { line: CartLine }) {
   function run(action: () => Promise<CartActionResult>) {
     setError(null);
     startTransition(async () => {
-      const result = await action();
+      try {
+        const result = await action();
+        if (!result.ok) setError(result.message);
+      } catch {
+        // The request never completed (connection or server failure).
+        setError("We couldn't update your bag. Please try again.");
+      }
       notifyCartChanged();
-      if (!result.ok) setError(result.message);
     });
   }
 

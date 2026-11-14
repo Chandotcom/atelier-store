@@ -54,10 +54,16 @@ export function ProductPurchase({ product }: { product: Product }) {
     setAddError(null);
     startAdding(async () => {
       // The page's stock figures are cached; the action checks the live stock.
-      const result = await addToCart(product.id, selected?.label ?? null);
+      try {
+        const result = await addToCart(product.id, selected?.label ?? null);
+        setAdded(result.ok);
+        if (!result.ok) setAddError(result.message);
+      } catch {
+        // The request never completed (connection or server failure).
+        setAdded(false);
+        setAddError("We couldn't add this to your bag. Please try again.");
+      }
       notifyCartChanged();
-      setAdded(result.ok);
-      if (!result.ok) setAddError(result.message);
     });
   }
 
@@ -76,7 +82,8 @@ export function ProductPurchase({ product }: { product: Product }) {
                 <button
                   key={s.label}
                   type="button"
-                  disabled={out}
+                  // Locked while adding, so the result can't land beside a different size.
+                  disabled={out || adding}
                   aria-pressed={active}
                   aria-label={out ? `${s.label}, sold out` : s.label}
                   onClick={() => {

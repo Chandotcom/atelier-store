@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 import { resetWishlist } from "@/lib/wishlist";
-import { Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
+import { connectionError, Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -17,11 +17,13 @@ export function SignUpForm() {
     setPending(true);
     setError(null);
 
-    const { error } = await authClient.signUp.email({
-      name: String(data.get("name")).trim(),
-      email: String(data.get("email")),
-      password: String(data.get("password")),
-    });
+    const { error } = await authClient.signUp
+      .email({
+        name: String(data.get("name")).trim(),
+        email: String(data.get("email")),
+        password: String(data.get("password")),
+      })
+      .catch(connectionError);
 
     if (error) {
       setPending(false);

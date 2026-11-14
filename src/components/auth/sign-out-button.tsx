@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { resetWishlist } from "@/lib/wishlist";
+import { connectionError } from "./fields";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -13,7 +14,7 @@ export function SignOutButton() {
   async function signOut() {
     setPending(true);
     setError(null);
-    const { error } = await authClient.signOut();
+    const { error } = await authClient.signOut().catch(connectionError);
     if (error) {
       setError("We couldn't sign you out. Please try again.");
       setPending(false);

@@ -99,7 +99,9 @@ async function BrowseInstead({ message }: { message: React.ReactNode }) {
 function SearchSkeleton() {
   return (
     <>
-      <SearchForm />
+      {/* A placeholder, not the real form: anything typed into a form here would
+          be thrown away when the loaded form replaces it. */}
+      <div className="mt-8 h-12 max-w-xl animate-pulse bg-surface" />
       <div className="mt-10 h-3 w-40 animate-pulse bg-surface" aria-busy="true" aria-label="Searching" />
     </>
   );

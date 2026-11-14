@@ -22,6 +22,8 @@ const EMPTY: WishlistState = { ready: false, signedIn: false, ids: new Set() };
 
 let state: WishlistState = EMPTY;
 let loading = false;
+/** Bumped by every reset and save, so a load that started before one can tell it is out of date. */
+let version = 0;
 const listeners = new Set<() => void>();
 
 function publish(next: WishlistState) {
@@ -32,14 +34,22 @@ function publish(next: WishlistState) {
 async function load() {
   if (loading) return;
   loading = true;
+  const started = version;
   try {
     const response = await fetch("/api/wishlist", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Wishlist request failed with ${response.status}`);
     const data: { signedIn: boolean; ids: number[] } = await response.json();
-    publish({ ready: true, signedIn: data.signedIn, ids: new Set(data.ids) });
+    // A sign-in, sign-out or save since the request began makes this answer
+    // stale: it may describe the previous visitor, or miss the save.
+    if (started === version) {
+      publish({ ready: true, signedIn: data.signedIn, ids: new Set(data.ids) });
+    }
   } catch {
-    publish({ ready: true, signedIn: false, ids: new Set() });
+    // Leave `ready` false, so the next component to subscribe tries again
+    // instead of treating a failed request as an empty wishlist.
   } finally {
     loading = false;
+    if (started !== version && listeners.size > 0) void load();
   }
 }
 
@@ -59,6 +69,7 @@ export function getServerWishlistSnapshot(): WishlistState {
 
 /** Call after a wishlist action succeeds. */
 export function markWishlisted(productId: number, saved: boolean): void {
+  version++;
   const ids = new Set(state.ids);
   if (saved) ids.add(productId);
   else ids.delete(productId);
@@ -67,6 +78,8 @@ export function markWishlisted(productId: number, saved: boolean): void {
 
 /** Call after signing in or out: the saved ids belong to a different visitor now. */
 export function resetWishlist(): void {
+  version++;
   publish(EMPTY);
+  // If a load is already running, it reloads by itself once it sees the new version.
   if (listeners.size > 0) void load();
 }

@@ -25,12 +25,18 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case "checkout.session.completed":
-    case "checkout.session.async_payment_succeeded":
-      if (await fulfillCheckoutSession(event.data.object)) {
+    case "checkout.session.async_payment_succeeded": {
+      // The event's copy of the session is shaped by the webhook endpoint's
+      // API version, which is set in the Stripe dashboard and may be older
+      // than the SDK's (shipping details moved in 2025-03-31). Fetching it
+      // through the SDK gives the shape `fulfillCheckoutSession` expects.
+      const session = await getStripe().checkout.sessions.retrieve(event.data.object.id);
+      if (await fulfillCheckoutSession(session)) {
         // Stock must not be served stale, and updateTag isn't available here.
         revalidateTag(PRODUCTS_TAG, { expire: 0 });
       }
       break;
+    }
     case "checkout.session.expired":
     case "checkout.session.async_payment_failed":
       await cancelOrderForSession(event.data.object.id);

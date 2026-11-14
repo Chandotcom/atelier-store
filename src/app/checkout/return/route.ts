@@ -28,10 +28,13 @@ export async function GET(request: NextRequest) {
     // arrives. The webhook fulfils the order once it does.
     processing = !paid && session.status === "complete";
   } catch (error) {
+    // The customer may well have paid. Sending them to the bag would show the
+    // paid pieces with a Checkout button, so explain and offer a retry instead.
     console.error("[checkout] Could not confirm Stripe session", error);
-    return to("/cart");
+    return to(`/checkout/processing?session_id=${encodeURIComponent(sessionId)}&state=unconfirmed`);
   }
-  if (processing) return to("/checkout/processing");
+  // The session id goes along so the page can show the order once it is paid.
+  if (processing) return to(`/checkout/processing?session_id=${encodeURIComponent(sessionId)}`);
   if (!paid) return to("/cart");
 
   // Stock changed, so the cached catalog is out of date. Expire it at once

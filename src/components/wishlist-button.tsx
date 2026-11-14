@@ -23,7 +23,9 @@ function useWishlistToggle(productId: number) {
 
   function set(next: boolean, onDone?: () => void) {
     startTransition(async () => {
-      const result = await setWishlisted(productId, next);
+      // A request that never completes leaves the button as it was, to try again.
+      const result = await setWishlisted(productId, next).catch(() => null);
+      if (!result) return;
       if (result.ok) {
         markWishlisted(productId, result.saved);
         onDone?.();
