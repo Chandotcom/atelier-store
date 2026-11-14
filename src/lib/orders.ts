@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import { db } from "@/db";
 import { orderItems, orders, type ShippingAddressRow } from "@/db/schema";
 import type { CartLine } from "./cart";
+import { orderConfirmationEmail, sendEmail } from "./email";
 
 /*
  * Order writes and reads. Server-only, and nothing here is cached.
@@ -51,7 +52,8 @@ export async function attachStripeSession(orderId: number, sessionId: string): P
 /**
  * Marks the session's order paid, takes its pieces out of stock and removes
  * them from the bag it came from. Anything added to the bag after checkout
- * started stays there. Returns false if Stripe hasn't confirmed payment.
+ * started stays there. The call that marks the order paid also emails the
+ * confirmation. Returns false if Stripe hasn't confirmed payment.
  *
  * This is one SQL statement on purpose: the `status = 'pending'` guard makes
  * a second call (webhook and return route both arrive) a no-op, and the
@@ -79,7 +81,7 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session): 
       ? session.payment_intent
       : (session.payment_intent?.id ?? null);
 
-  await db.execute(sql`
+  const result = await db.execute<{ id: number }>(sql`
     with paid as (
       update orders
       set status = 'paid',
@@ -115,14 +117,50 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session): 
         and ci.product_id = b.product_id
         and ci.size is not distinct from b.size
         and ci.quantity > b.quantity
+    ),
+    stock as (
+      update product_stock ps
+      set quantity = greatest(ps.quantity - b.quantity, 0)
+      from bought b
+      where ps.product_id = b.product_id
+        and ps.size is not distinct from b.size
     )
-    update product_stock ps
-    set quantity = greatest(ps.quantity - b.quantity, 0)
-    from bought b
-    where ps.product_id = b.product_id
-      and ps.size is not distinct from b.size
+    -- A row comes back only from the call that flipped the order to paid.
+    select id from paid
   `);
+
+  // Only the call that marked the order paid sends the confirmation, so the
+  // webhook and the return route can't both email the customer.
+  if (result.rows.length > 0) await sendOrderConfirmation(session.id);
   return true;
+}
+
+/** Never throws: a failed email must not undo or block a paid order. */
+async function sendOrderConfirmation(sessionId: string): Promise<void> {
+  try {
+    const order = await getOrderBySessionId(sessionId);
+    if (!order?.email) return;
+
+    const address = order.shippingAddress;
+    await sendEmail({
+      ...orderConfirmationEmail({
+        to: order.email,
+        orderNumber: formatOrderNumber(order.id),
+        items: order.items,
+        totalCents: order.totalCents,
+        address: [
+          address?.name,
+          address?.line1,
+          address?.line2,
+          [address?.city, address?.state, address?.postalCode].filter(Boolean).join(", "),
+          address?.country,
+        ].filter((line): line is string => Boolean(line)),
+      }),
+      idempotencyKey: `order-confirmation/${order.id}`,
+    });
+  } catch (error) {
+    console.error("[orders] Could not send the order confirmation email", error);
+  }
 }
 
 /** For a Stripe payment page that expired without payment. */

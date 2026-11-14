@@ -1,8 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { after } from "next/server";
 
 import { db, schema } from "@/db";
+import { passwordResetEmail, sendEmail } from "./email";
 
 /**
  * Better Auth server instance.
@@ -19,10 +21,28 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    // No email provider is connected yet, so the reset link is only logged
-    // to the server console. Replace this with a real send before launch.
+    // Sent through Resend. Without RESEND_API_KEY the link is logged to the
+    // server console instead (see src/lib/email.ts).
     sendResetPassword: async ({ user, url }) => {
-      console.log(`[auth] Password reset link for ${user.email}: ${url}`);
+      try {
+        await sendEmail(passwordResetEmail({ to: user.email, url }));
+      } catch (error) {
+        console.error("[auth] Could not send the password reset email", error);
+      }
+    },
+  },
+  advanced: {
+    // Better Auth runs email sends through this instead of awaiting them, so
+    // the response time doesn't reveal whether an address has an account.
+    // `after` keeps the send alive once the response has gone out.
+    backgroundTasks: {
+      handler: (promise) => {
+        try {
+          after(promise);
+        } catch {
+          // Outside a request there is nothing to wait for; the send still runs.
+        }
+      },
     },
   },
   plugins: [
