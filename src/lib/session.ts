@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { connection } from "next/server";
 
 import { auth } from "./auth";
 
@@ -24,6 +25,13 @@ export const ADMIN_ROLE = "admin";
 
 /** The signed-in customer, or null. Returns only the fields the UI needs. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
+  // Wait for a real request. With Partial Prefetching, a <Link> to an account
+  // or admin page prefetches its App Shell with the visitor's cookies, so
+  // without this the session lookup would start during that prefetch render,
+  // and its database query would be cut off when the render ends (logged as
+  // "fetch() rejects when the prerender is complete"). Code after
+  // `connection()` runs only for an actual request, never in a prerender.
+  await connection();
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return null;
   const { id, name, email, createdAt, role } = session.user;

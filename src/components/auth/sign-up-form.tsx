@@ -1,13 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
-import { resetWishlist } from "@/lib/wishlist";
 import { connectionError, Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
 
 export function SignUpForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -30,10 +27,11 @@ export function SignUpForm() {
       setError(error.message ?? "We couldn't create your account. Please try again.");
       return;
     }
-    // No email verification yet, so sign-up also signs the customer in.
-    resetWishlist();
-    router.push("/account");
-    router.refresh();
+    // No email verification yet, so sign-up also signs the customer in. A full
+    // page load, so nothing the router stored while signed out is replayed
+    // (see sign-in-form.tsx).
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full reload is the point (see above)
+    window.location.assign("/account");
   }
 
   return (

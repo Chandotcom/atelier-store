@@ -1,13 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { resetWishlist } from "@/lib/wishlist";
 import { connectionError } from "./fields";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,9 +17,11 @@ export function SignOutButton() {
       setPending(false);
       return;
     }
-    resetWishlist();
-    router.push("/");
-    router.refresh();
+    // A full page load, not router.push: the client router may still hold
+    // signed-in pages (account, wishlist, admin), which must not be shown
+    // again from memory after signing out, for example on a shared computer.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full reload is the point (see above)
+    window.location.assign("/");
   }
 
   return (
