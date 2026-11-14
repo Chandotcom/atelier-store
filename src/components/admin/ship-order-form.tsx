@@ -2,7 +2,8 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { markOrderShipped } from "@/app/admin/actions";
-import { Field, FormError } from "@/components/auth/fields";
+import { TruckIcon } from "@/components/icons";
+import { FormError, Input } from "./fields";
 
 /** Marks an order shipped. The page re-renders with the shipped details once it succeeds. */
 export function ShipOrderForm({ orderId, hasEmail }: { orderId: number; hasEmail: boolean }) {
@@ -25,20 +26,22 @@ export function ShipOrderForm({ orderId, hasEmail }: { orderId: number; hasEmail
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-4 space-y-6">
-      <Field
+    <form onSubmit={onSubmit} className="space-y-4">
+      <Input
         label="Tracking number"
         name="tracking"
         maxLength={80}
         autoComplete="off"
+        placeholder="Optional"
         hint={
           hasEmail
-            ? "Optional. The customer is emailed when you mark the order as shipped."
-            : "Optional. This order has no email address, so no notice will be sent."
+            ? "The customer is emailed when you mark the order as shipped."
+            : "This order has no email address, so no notice will be sent."
         }
       />
       <FormError message={error} />
-      <button type="submit" className="btn btn-primary btn-block" disabled={pending}>
+      <button type="submit" className="admin-btn admin-btn-primary w-full" disabled={pending}>
+        <TruckIcon className="size-4" strokeWidth={1.5} />
         {pending ? "Saving…" : "Mark as shipped"}
       </button>
     </form>

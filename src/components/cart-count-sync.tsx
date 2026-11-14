@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { refreshCartCount } from "@/app/cart/actions";
+import { refreshCartCount } from "@/app/(store)/cart/actions";
 import { notifyCartChanged, readCartCount } from "@/lib/cart";
 
 /**

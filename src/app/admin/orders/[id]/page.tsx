@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
+import { Section } from "@/components/admin/fields";
 import { ShipOrderForm } from "@/components/admin/ship-order-form";
-import { adminDate, AdminSkeleton, StatusPill } from "@/components/admin/ui";
+import { adminDate, AdminSkeleton, PageHeader, ShippedBadge } from "@/components/admin/ui";
 import { OrderItems } from "@/components/order-items";
 import { getAdminOrder } from "@/lib/admin-data";
 import { addressLines, formatOrderNumber } from "@/lib/orders";
@@ -27,44 +27,39 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[id]">, "params">
   if (!order) notFound();
 
   const address = addressLines(order.shippingAddress);
-  const facts: [string, React.ReactNode][] = [
-    ["Customer", order.email ?? "—"],
-    ["Account", order.userId ? "Registered customer" : "Guest checkout"],
-    ["Paid", order.paidAt ? adminDate.format(order.paidAt) : "—"],
-    ["Payment reference", order.stripePaymentIntentId ?? "—"],
-  ];
 
   return (
     <>
-      <Link href="/admin/orders" className="link text-caption text-muted">
-        &larr; All orders
-      </Link>
-      <div className="mt-4 flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="heading-headline">Order {formatOrderNumber(order.id)}</h1>
-        {order.shippedAt ? <StatusPill tone="done">Shipped</StatusPill> : <StatusPill tone="todo">To ship</StatusPill>}
-      </div>
+      <PageHeader
+        title={`Order ${formatOrderNumber(order.id)}`}
+        back={{ href: "/admin/orders", label: "Orders" }}
+        actions={<ShippedBadge shipped={Boolean(order.shippedAt)} />}
+      />
 
-      <div className="mt-10 grid gap-12 lg:grid-cols-5">
-        <section aria-label="Items ordered" className="lg:col-span-3">
-          <OrderItems order={order} />
-        </section>
+      <div className="mt-6 grid items-start gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <Section title="Items">
+            <OrderItems order={order} />
+          </Section>
+        </div>
 
-        <div className="space-y-10 lg:col-span-2">
-          <section aria-label="Shipping">
-            <h2 className="text-label">Shipping</h2>
+        <div className="space-y-4 lg:col-span-2">
+          <Section
+            title="Shipping"
+            description={order.shippedAt ? undefined : "Mark the order as shipped once it has left."}
+          >
             {order.shippedAt ? (
-              <dl className="divider mt-4">
+              <dl className="-my-2">
                 <Row label="Shipped">{adminDate.format(order.shippedAt)}</Row>
                 <Row label="Tracking number">{order.trackingNumber ?? "None given"}</Row>
               </dl>
             ) : (
               <ShipOrderForm orderId={order.id} hasEmail={Boolean(order.email)} />
             )}
-          </section>
+          </Section>
 
-          <section aria-label="Delivery address">
-            <h2 className="text-label">Delivering to</h2>
-            <address className="text-muted mt-4 not-italic">
+          <Section title="Delivery address">
+            <address className="text-muted not-italic">
               {address.length === 0
                 ? "No address was collected."
                 : address.map((line, i) => (
@@ -74,28 +69,26 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[id]">, "params">
                     </span>
                   ))}
             </address>
-          </section>
+          </Section>
 
-          <section aria-label="Order details">
-            <h2 className="text-label">Details</h2>
-            <dl className="divider mt-4">
-              {facts.map(([label, value]) => (
-                <Row key={label} label={label}>
-                  {value}
-                </Row>
-              ))}
+          <Section title="Details">
+            <dl className="-my-2">
+              <Row label="Customer">{order.email ?? "—"}</Row>
+              <Row label="Account">{order.userId ? "Registered customer" : "Guest checkout"}</Row>
+              <Row label="Paid">{order.paidAt ? adminDate.format(order.paidAt) : "—"}</Row>
+              <Row label="Payment reference">{order.stripePaymentIntentId ?? "—"}</Row>
             </dl>
-          </section>
+          </Section>
         </div>
       </div>
     </>
   );
 }
 
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-6 border-b py-3">
-      <dt className="text-muted shrink-0">{label}</dt>
+    <div className="flex items-baseline justify-between gap-6 border-b py-2.5 last:border-b-0">
+      <dt className="shrink-0 text-muted">{label}</dt>
       <dd className="min-w-0 text-right break-all">{children}</dd>
     </div>
   );

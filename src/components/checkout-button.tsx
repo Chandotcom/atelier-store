@@ -2,7 +2,7 @@
 
 import { unstable_rethrow } from "next/navigation";
 import { useState, useTransition } from "react";
-import { startCheckout } from "@/app/checkout/actions";
+import { startCheckout } from "@/app/(store)/checkout/actions";
 
 /** Sends the bag to Stripe's payment page. `blocked` disables it while a line exceeds stock. */
 export function CheckoutButton({ blocked }: { blocked: boolean }) {

@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
-import { AdminSkeleton, OrdersTable, PageTitle } from "@/components/admin/ui";
+import { FilterTabs, SearchInput } from "@/components/admin/toolbar";
+import { AdminSkeleton, EmptyState, OrdersTable, PageHeader, Toolbar } from "@/components/admin/ui";
+import { BoxIcon } from "@/components/icons";
 import { getAdminOrders, type OrderFilter } from "@/lib/admin-data";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Orders" };
 
-const filters: { value: OrderFilter; label: string; empty: string }[] = [
-  { value: "all", label: "All", empty: "No orders have been paid yet." },
-  { value: "to-ship", label: "To ship", empty: "Nothing is waiting to be shipped." },
-  { value: "shipped", label: "Shipped", empty: "No orders have been shipped yet." },
+const filters: { value: OrderFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "to-ship", label: "To ship" },
+  { value: "shipped", label: "Shipped" },
 ];
 
 export default function AdminOrdersPage({ searchParams }: PageProps<"/admin/orders">) {
@@ -23,28 +24,29 @@ export default function AdminOrdersPage({ searchParams }: PageProps<"/admin/orde
 
 async function Orders({ searchParams }: Pick<PageProps<"/admin/orders">, "searchParams">) {
   await requireAdmin();
-  const { filter: raw } = await searchParams;
-  const current = filters.find((f) => f.value === raw) ?? filters[0];
-  const orders = await getAdminOrders(current.value);
+  const params = await searchParams;
+  const filter = filters.find((f) => f.value === params.filter)?.value ?? "all";
+  const q = typeof params.q === "string" ? params.q : undefined;
+  const orders = await getAdminOrders({ filter, q });
 
   return (
     <>
-      <PageTitle title="Orders" />
-      <ul className="mt-6 flex flex-wrap gap-2">
-        {filters.map((f) => (
-          <li key={f.value}>
-            <Link
-              href={f.value === "all" ? "/admin/orders" : `/admin/orders?filter=${f.value}`}
-              aria-current={f === current ? "page" : undefined}
-              className={`btn btn-sm ${f === current ? "btn-primary" : "btn-secondary"}`}
-            >
-              {f.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <PageHeader title="Orders" description="Paid orders, newest first. Open one to see its items and mark it as shipped." />
+      <FilterTabs
+        param="filter"
+        label="Shipping status"
+        // "all" is the default view, so it clears the parameter.
+        options={filters.map((f) => ({ value: f.value === "all" ? "" : f.value, label: f.label }))}
+      />
+      <Toolbar>
+        <SearchInput placeholder="Search by order number or customer email…" />
+      </Toolbar>
       {orders.length === 0 ? (
-        <p className="text-muted mt-8">{current.empty}</p>
+        <EmptyState
+          icon={BoxIcon}
+          title={q ? "No orders match your search" : "No orders here yet"}
+          hint={q ? "Try a different order number or email." : undefined}
+        />
       ) : (
         <OrdersTable orders={orders} />
       )}

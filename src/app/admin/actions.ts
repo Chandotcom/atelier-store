@@ -4,11 +4,11 @@ import { and, eq, like, ne } from "drizzle-orm";
 import { refresh, updateTag } from "next/cache";
 
 import { db } from "@/db";
-import { categories, productStock, products, type ProductImageRow } from "@/db/schema";
+import { categories, productStock, products, user, type ProductImageRow } from "@/db/schema";
 import type { AdminResult, ProductInput, SaveProductResult } from "@/lib/admin";
 import { shipOrder } from "@/lib/orders";
 import { PRODUCTS_TAG } from "@/lib/products";
-import { isAdminRequest } from "@/lib/session";
+import { ADMIN_ROLE, getCurrentUser, isAdminRequest } from "@/lib/session";
 import { UNSPLASH_QUERY, unsplash } from "@/lib/unsplash";
 
 /*
@@ -224,6 +224,30 @@ export async function deleteProduct(id: number): Promise<AdminResult> {
   const deleted = await db.delete(products).where(eq(products.id, id)).returning({ id: products.id });
   if (deleted.length === 0) return { ok: false, message: "This product no longer exists." };
   updateTag(PRODUCTS_TAG);
+  return { ok: true };
+}
+
+/**
+ * Gives an account the admin role, or takes it away. Admins can't change their
+ * own role: that keeps at least one admin (whoever is doing the removing), and
+ * stops someone locking themselves out by accident.
+ */
+export async function setCustomerAdmin(userId: string, makeAdmin: boolean): Promise<AdminResult> {
+  const current = await getCurrentUser();
+  if (!current?.isAdmin) return DENIED;
+  if (typeof userId !== "string" || userId.length === 0 || userId.length > 64 || typeof makeAdmin !== "boolean") {
+    return { ok: false, message: "The account is invalid." };
+  }
+  if (userId === current.id) return { ok: false, message: "You can't change your own role." };
+
+  const updated = await db
+    .update(user)
+    .set({ role: makeAdmin ? ADMIN_ROLE : "user" })
+    .where(eq(user.id, userId))
+    .returning({ id: user.id });
+  if (updated.length === 0) return { ok: false, message: "This account no longer exists." };
+
+  refresh();
   return { ok: true };
 }
 

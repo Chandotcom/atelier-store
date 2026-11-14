@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useId, useState, useTransition, type FormEvent, type ReactNode } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import { deleteProduct, saveProduct } from "@/app/admin/actions";
-import { FormError } from "@/components/auth/fields";
+import { PlusIcon } from "@/components/icons";
 import type { ProductInput } from "@/lib/admin";
 import type { AdminProduct } from "@/lib/admin-data";
+import { FormError, Input, Labelled, Section } from "./fields";
 
 type Props = {
   /** Omit to create a product. */
@@ -100,14 +101,14 @@ export function ProductForm({ product, categories }: Props) {
     rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
 
   return (
-    <form onSubmit={onSubmit} className="mt-10 grid gap-x-16 gap-y-12 lg:grid-cols-2">
-      <div className="space-y-8">
-        <Group title="Details">
+    <form onSubmit={onSubmit} className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+      <div className="space-y-4">
+        <Section title="Details">
           <Input label="Name" name="name" defaultValue={product?.name} maxLength={120} required />
           <div className="grid gap-6 sm:grid-cols-2">
             <Labelled label="Category">
               {(id) => (
-                <select id={id} name="categoryId" defaultValue={product?.categoryId} className="field" required>
+                <select id={id} name="categoryId" defaultValue={product?.categoryId} className="admin-field cursor-pointer" required>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -146,7 +147,7 @@ export function ProductForm({ product, categories }: Props) {
                 defaultValue={product?.description}
                 maxLength={2000}
                 rows={4}
-                className="field h-auto py-3"
+                className="admin-field h-auto py-2.5"
                 required
               />
             )}
@@ -159,16 +160,16 @@ export function ProductForm({ product, categories }: Props) {
                 defaultValue={product?.details.join("\n")}
                 rows={4}
                 aria-describedby={hintId}
-                className="field h-auto py-3"
+                className="admin-field h-auto py-2.5"
               />
             )}
           </Labelled>
-        </Group>
+        </Section>
       </div>
 
-      <div className="space-y-12">
-        <Group title="Stock">
-          <label className="flex items-center gap-3">
+      <div className="space-y-4">
+        <Section title="Stock" description="How many pieces are on hand, per size if the product has sizes.">
+          <label className="flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={sized}
@@ -201,7 +202,7 @@ export function ProductForm({ product, categories }: Props) {
                   />
                   <button
                     type="button"
-                    className="link text-caption text-muted h-12 shrink-0 cursor-pointer"
+                    className="h-10 shrink-0 cursor-pointer text-[0.8125rem] text-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={sizes.length === 1}
                     onClick={() => setSizes(sizes.filter((_, n) => n !== i))}
                   >
@@ -211,10 +212,11 @@ export function ProductForm({ product, categories }: Props) {
               ))}
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
+                className="admin-btn admin-btn-secondary"
                 disabled={sizes.length >= 16}
                 onClick={() => setSizes([...sizes, { size: "", quantity: "0" }])}
               >
+                <PlusIcon className="size-4" strokeWidth={1.5} />
                 Add size
               </button>
             </div>
@@ -230,16 +232,15 @@ export function ProductForm({ product, categories }: Props) {
               required
             />
           )}
-        </Group>
+        </Section>
 
-        <Group title="Images">
-          <p className="text-caption text-muted">
-            The first image is shown in listings. Only Unsplash photos can be used: paste a link that
-            starts with https://images.unsplash.com/photo-
-          </p>
+        <Section
+          title="Images"
+          description="The first image is shown in listings. Only Unsplash photos can be used: paste a link that starts with https://images.unsplash.com/photo-"
+        >
           <div className="space-y-6">
             {images.map((row, i) => (
-              <div key={i} className="hairline space-y-4 p-4">
+              <div key={i} className="space-y-4 rounded-[0.5rem] border bg-surface/50 p-4">
                 <Input
                   label={`Image ${i + 1} link`}
                   value={row.src}
@@ -255,7 +256,7 @@ export function ProductForm({ product, categories }: Props) {
                 />
                 <button
                   type="button"
-                  className="link text-caption text-muted cursor-pointer"
+                  className="cursor-pointer text-[0.8125rem] text-muted hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
                   disabled={images.length === 1}
                   onClick={() => setImages(images.filter((_, n) => n !== i))}
                 >
@@ -266,32 +267,33 @@ export function ProductForm({ product, categories }: Props) {
           </div>
           <button
             type="button"
-            className="btn btn-secondary btn-sm"
+            className="admin-btn admin-btn-secondary"
             disabled={images.length >= 8}
             onClick={() => setImages([...images, { src: "", alt: "" }])}
           >
+            <PlusIcon className="size-4" strokeWidth={1.5} />
             Add image
           </button>
-        </Group>
+        </Section>
       </div>
 
-      <div className="divider space-y-4 pt-8 lg:col-span-2">
+      <div className="admin-card space-y-4 p-5 lg:col-span-2">
         <FormError message={error} />
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <button type="submit" className="btn btn-primary" disabled={pending}>
+          <button type="submit" className="admin-btn admin-btn-primary" disabled={pending}>
             {pending ? "Saving…" : product ? "Save changes" : "Create product"}
           </button>
 
           {product &&
             (confirmingDelete ? (
               <div className="flex flex-wrap items-center gap-3" role="group" aria-label="Confirm delete">
-                <span className="text-caption text-sale">Delete this product for good?</span>
-                <button type="button" className="btn btn-secondary btn-sm" disabled={pending} onClick={remove}>
+                <span className="text-[0.8125rem] text-sale">Delete this product for good?</span>
+                <button type="button" className="admin-btn admin-btn-danger" disabled={pending} onClick={remove}>
                   Yes, delete
                 </button>
                 <button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  className="admin-btn admin-btn-secondary"
                   disabled={pending}
                   onClick={() => setConfirmingDelete(false)}
                 >
@@ -301,7 +303,7 @@ export function ProductForm({ product, categories }: Props) {
             ) : (
               <button
                 type="button"
-                className="link text-caption text-sale cursor-pointer"
+                className="admin-btn admin-btn-danger"
                 disabled={pending}
                 onClick={() => setConfirmingDelete(true)}
               >
@@ -311,53 +313,5 @@ export function ProductForm({ product, categories }: Props) {
         </div>
       </div>
     </form>
-  );
-}
-
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <fieldset className="space-y-6">
-      <legend className="heading-title mb-6">{title}</legend>
-      {children}
-    </fieldset>
-  );
-}
-
-/** A label, an optional hint, and whatever control `children` renders for the given id. */
-function Labelled({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: (id: string, hintId: string | undefined) => ReactNode;
-}) {
-  const id = useId();
-  const hintId = hint ? `${id}-hint` : undefined;
-  return (
-    <div className="min-w-0 flex-1">
-      <label htmlFor={id} className="text-label">
-        {label}
-      </label>
-      {children(id, hintId)}
-      {hint && (
-        <p id={hintId} className="text-caption text-muted mt-2">
-          {hint}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Input({
-  label,
-  hint,
-  ...props
-}: { label: string; hint?: string } & Omit<React.ComponentProps<"input">, "id" | "className">) {
-  return (
-    <Labelled label={label} hint={hint}>
-      {(id, hintId) => <input id={id} className="field" aria-describedby={hintId} {...props} />}
-    </Labelled>
   );
 }

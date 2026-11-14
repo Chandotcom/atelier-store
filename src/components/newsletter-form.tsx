@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { subscribeToNewsletter } from "@/app/newsletter/actions";
+import { subscribeToNewsletter } from "@/app/(store)/newsletter/actions";
 
 const ERRORS = {
   invalid: "Please enter a valid email address.",

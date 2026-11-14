@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { AdminSkeleton, OrdersTable, PageTitle } from "@/components/admin/ui";
+import { Suspense, type ComponentType, type SVGProps } from "react";
+import { AdminSkeleton, Badge, EmptyState, OrdersTable, PageHeader } from "@/components/admin/ui";
+import { AlertIcon, ArrowRightIcon, BoxIcon, CoinsIcon, TruckIcon, UsersIcon } from "@/components/icons";
 import { getDashboardStats } from "@/lib/admin-data";
 import { formatPrice } from "@/lib/catalog";
 import { requireAdmin } from "@/lib/session";
@@ -13,66 +14,97 @@ export default function AdminOverviewPage() {
   );
 }
 
+type Tile = {
+  label: string;
+  value: string;
+  hint: string;
+  href: string;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+};
+
 async function Overview() {
-  await requireAdmin();
+  const user = await requireAdmin();
   const stats = await getDashboardStats();
 
-  const tiles = [
-    { label: "Revenue", value: formatPrice(stats.revenueCents), href: "/admin/orders" },
-    { label: "Paid orders", value: String(stats.orders), href: "/admin/orders" },
-    { label: "To ship", value: String(stats.toShip), href: "/admin/orders?filter=to-ship" },
-    { label: "Customers", value: String(stats.customers), href: "/admin/customers" },
+  const tiles: Tile[] = [
+    { label: "Revenue", value: formatPrice(stats.revenueCents), hint: "From paid orders", href: "/admin/orders", icon: CoinsIcon },
+    { label: "Paid orders", value: String(stats.orders), hint: "All time", href: "/admin/orders", icon: BoxIcon },
+    {
+      label: "To ship",
+      value: String(stats.toShip),
+      hint: stats.toShip === 0 ? "Nothing waiting" : "Waiting to be sent",
+      href: "/admin/orders?filter=to-ship",
+      icon: TruckIcon,
+    },
+    { label: "Customers", value: String(stats.customers), hint: "Registered accounts", href: "/admin/customers", icon: UsersIcon },
   ];
 
   return (
     <>
-      <PageTitle title="Overview" />
+      <PageHeader title="Overview" description={`Welcome back, ${user.name.split(" ")[0]}. Here is how the store is doing.`} />
 
-      <ul className="mt-8 grid grid-cols-2 gap-px bg-line hairline lg:grid-cols-4">
+      <ul className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((tile) => (
-          <li key={tile.label} className="bg-paper">
-            <Link href={tile.href} className="block p-5 transition-colors hover:bg-surface md:p-6">
-              <span className="text-eyebrow text-muted">{tile.label}</span>
-              <span className="heading-headline mt-3 block tabular-nums">{tile.value}</span>
+          <li key={tile.label}>
+            <Link href={tile.href} className="admin-card block p-5 transition-colors hover:border-subtle">
+              <span className="flex items-center justify-between gap-3 text-[0.8125rem] font-medium text-muted">
+                {tile.label}
+                <tile.icon className="size-4" strokeWidth={1.5} />
+              </span>
+              <span className="mt-3 block text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
+                {tile.value}
+              </span>
+              <span className="mt-2 block text-[0.8125rem] text-muted">{tile.hint}</span>
             </Link>
           </li>
         ))}
       </ul>
 
-      <div className="mt-section grid gap-12 lg:grid-cols-3">
-        <section aria-label="Recent orders" className="lg:col-span-2">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 className="heading-title">Recent orders</h2>
-            <Link href="/admin/orders" className="link text-caption">
+      <div className="mt-10 grid gap-10 xl:grid-cols-3">
+        <section aria-label="Recent orders" className="min-w-0 xl:col-span-2">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="admin-heading">Recent orders</h2>
+            <Link href="/admin/orders" className="inline-flex items-center gap-1.5 text-[0.8125rem] text-muted hover:text-ink">
               View all
+              <ArrowRightIcon className="size-3.5" strokeWidth={1.5} />
             </Link>
           </div>
           {stats.recentOrders.length === 0 ? (
-            <p className="text-muted mt-4">No orders have been paid yet.</p>
+            <EmptyState icon={BoxIcon} title="No orders yet" hint="Paid orders will appear here." />
           ) : (
             <OrdersTable orders={stats.recentOrders} />
           )}
         </section>
 
-        <section aria-label="Low stock">
-          <h2 className="heading-title">Low stock</h2>
+        <section aria-label="Low stock" className="min-w-0">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="admin-heading">Low stock</h2>
+            <Link
+              href="/admin/products?stock=low_stock"
+              className="inline-flex items-center gap-1.5 text-[0.8125rem] text-muted hover:text-ink"
+            >
+              View products
+              <ArrowRightIcon className="size-3.5" strokeWidth={1.5} />
+            </Link>
+          </div>
           {stats.lowStock.length === 0 ? (
-            <p className="text-muted mt-4">Everything is well stocked.</p>
+            <EmptyState icon={AlertIcon} title="Everything is well stocked" />
           ) : (
-            <ul className="divider mt-8">
-              {stats.lowStock.map((row) => (
-                <li key={`${row.productId}-${row.size}`} className="border-b">
+            <ul className="admin-card mt-4 divide-y">
+              {/* The most urgent few; "View products" lists the rest. */}
+              {stats.lowStock.slice(0, 6).map((row) => (
+                <li key={`${row.productId}-${row.size}`}>
                   <Link
                     href={`/admin/products/${row.productId}`}
-                    className="flex items-baseline justify-between gap-4 py-3 hover:bg-surface"
+                    className="flex items-center justify-between gap-4 px-4 py-3 hover:bg-surface/60"
                   >
                     <span className="min-w-0">
-                      {row.name}
-                      {row.size && <span className="text-muted"> &middot; Size {row.size}</span>}
+                      <span className="block truncate text-[0.875rem] font-medium">{row.name}</span>
+                      <span className="block text-[0.8125rem] text-muted">{row.size ? `Size ${row.size}` : "One size"}</span>
                     </span>
-                    <span className={`text-eyebrow shrink-0 ${row.quantity === 0 ? "text-sale" : "text-ink"}`}>
+                    <Badge tone={row.quantity === 0 ? "danger" : "neutral"}>
                       {row.quantity === 0 ? "Sold out" : `${row.quantity} left`}
-                    </span>
+                    </Badge>
                   </Link>
                 </li>
               ))}
