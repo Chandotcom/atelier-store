@@ -1,14 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
-import { resetWishlist } from "@/lib/wishlist";
 import { connectionError, Field, FormError } from "./fields";
 
 export function SignInForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -30,9 +27,13 @@ export function SignInForm() {
       setError(error.message ?? "We couldn't sign you in. Please try again.");
       return;
     }
-    resetWishlist();
-    router.push("/account");
-    router.refresh();
+    // A full page load, not router.push: the client router may still hold
+    // pages it fetched while the visitor was signed out (clicking the account
+    // icon stores /account as a redirect to /sign-in), and pushing would replay
+    // that redirect and leave the form stuck on "Signing in…". Loading the page
+    // afresh drops all of it, including the wishlist store.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full reload is the point (see above)
+    window.location.assign("/account");
   }
 
   return (

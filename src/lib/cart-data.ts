@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 import { db } from "@/db";
 import { cartItems, productStock, products } from "@/db/schema";
@@ -20,6 +21,10 @@ export const CART_COOKIE = "altiere_cart";
 export const CART_COOKIE_MAX_AGE = 60 * 60 * 24 * 60; // 60 days
 
 export async function getCartId(): Promise<string | null> {
+  // Every caller queries the database with this id. Wait for a real request so
+  // that query never starts in a prefetch render of /cart, where it would be
+  // cut off. See `getCurrentUser` in ./session.ts.
+  await connection();
   return (await cookies()).get(CART_COOKIE)?.value ?? null;
 }
 
