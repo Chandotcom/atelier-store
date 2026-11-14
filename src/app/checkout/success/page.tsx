@@ -49,9 +49,14 @@ async function Confirmation({ searchParams }: Pick<PageProps<"/checkout/success"
       </section>
 
       {address && (
-        <section aria-label="Delivery address" className="mt-10">
+        // Same label-left, value-right row as the total above it, so the address
+        // reads as part of the order summary.
+        <section
+          aria-label="Delivery address"
+          className="divider mt-4 flex justify-between gap-6 border-b py-4"
+        >
           <h2 className="text-label font-sans">Delivering to</h2>
-          <address className="text-muted mt-3 not-italic">
+          <address className="text-muted min-w-0 text-right break-words not-italic">
             {(
               [
                 ["name", address.name],
