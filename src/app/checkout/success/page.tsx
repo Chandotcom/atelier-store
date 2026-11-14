@@ -52,11 +52,19 @@ async function Confirmation({ searchParams }: Pick<PageProps<"/checkout/success"
         <section aria-label="Delivery address" className="mt-10">
           <h2 className="text-label font-sans">Delivering to</h2>
           <address className="text-muted mt-3 not-italic">
-            {[address.name, address.line1, address.line2, cityLine, address.country]
-              .filter(Boolean)
-              .map((line) => (
-                <span key={line} className="block">
-                  {line}
+            {(
+              [
+                ["name", address.name],
+                ["line1", address.line1],
+                ["line2", address.line2],
+                ["city", cityLine],
+                ["country", address.country],
+              ] as const
+            )
+              .filter(([, value]) => Boolean(value))
+              .map(([field, value]) => (
+                <span key={field} className="block">
+                  {value}
                 </span>
               ))}
           </address>

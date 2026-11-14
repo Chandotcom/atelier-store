@@ -27,7 +27,8 @@ export async function POST(request: Request) {
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded":
       if (await fulfillCheckoutSession(event.data.object)) {
-        revalidateTag(PRODUCTS_TAG, "max");
+        // Stock must not be served stale, and updateTag isn't available here.
+        revalidateTag(PRODUCTS_TAG, { expire: 0 });
       }
       break;
     case "checkout.session.expired":

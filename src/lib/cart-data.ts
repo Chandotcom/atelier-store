@@ -62,6 +62,15 @@ export async function getCartLines(cartId: string): Promise<CartLine[]> {
   }));
 }
 
+/** Total pieces in the bag, for the count the header shows. */
+export async function getCartCount(cartId: string): Promise<number> {
+  const [row] = await db
+    .select({ count: sql<number>`coalesce(sum(${cartItems.quantity}), 0)::int` })
+    .from(cartItems)
+    .where(eq(cartItems.cartId, cartId));
+  return row?.count ?? 0;
+}
+
 export function toCart(lines: CartLine[]): Cart {
   return {
     lines,

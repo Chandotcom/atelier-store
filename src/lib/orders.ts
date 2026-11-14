@@ -49,8 +49,9 @@ export async function attachStripeSession(orderId: number, sessionId: string): P
 }
 
 /**
- * Marks the session's order paid, takes its pieces out of stock and empties
- * the bag it came from. Returns false if Stripe hasn't confirmed payment.
+ * Marks the session's order paid, takes its pieces out of stock and removes
+ * them from the bag it came from. Anything added to the bag after checkout
+ * started stays there. Returns false if Stripe hasn't confirmed payment.
  *
  * This is one SQL statement on purpose: the `status = 'pending'` guard makes
  * a second call (webhook and return route both arrive) a no-op, and the
@@ -90,15 +91,36 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session): 
       where stripe_session_id = ${session.id} and status = 'pending'
       returning id, cart_id
     ),
+    bought as (
+      select paid.cart_id, oi.product_id, oi.size, sum(oi.quantity)::int as quantity
+      from order_items oi
+      join paid on oi.order_id = paid.id
+      group by paid.cart_id, oi.product_id, oi.size
+    ),
+    -- Only what was bought leaves the bag: the customer may have added pieces
+    -- or raised a quantity in another tab while the payment page was open.
     emptied as (
-      delete from cart_items using paid where cart_items.cart_id = paid.cart_id
+      delete from cart_items ci
+      using bought b
+      where ci.cart_id = b.cart_id
+        and ci.product_id = b.product_id
+        and ci.size is not distinct from b.size
+        and ci.quantity <= b.quantity
+    ),
+    reduced as (
+      update cart_items ci
+      set quantity = ci.quantity - b.quantity
+      from bought b
+      where ci.cart_id = b.cart_id
+        and ci.product_id = b.product_id
+        and ci.size is not distinct from b.size
+        and ci.quantity > b.quantity
     )
     update product_stock ps
-    set quantity = greatest(ps.quantity - oi.quantity, 0)
-    from order_items oi, paid
-    where oi.order_id = paid.id
-      and ps.product_id = oi.product_id
-      and ps.size is not distinct from oi.size
+    set quantity = greatest(ps.quantity - b.quantity, 0)
+    from bought b
+    where ps.product_id = b.product_id
+      and ps.size is not distinct from b.size
   `);
   return true;
 }

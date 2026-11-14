@@ -48,13 +48,34 @@ export function readCartCount(): number {
   return match ? Number(match[1]) : 0;
 }
 
+/** Other tabs share the count cookie but not this tab's events. */
+function openCartChannel(): BroadcastChannel | null {
+  return typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(CART_CHANGE_EVENT);
+}
+
 /** Browser only. Call after a cart action resolves so the header count updates. */
 export function notifyCartChanged(): void {
   window.dispatchEvent(new Event(CART_CHANGE_EVENT));
+  const channel = openCartChannel();
+  channel?.postMessage(null);
+  channel?.close();
 }
 
-/** Browser only. `useSyncExternalStore`-style subscription to cart changes. */
+/**
+ * Browser only. `useSyncExternalStore`-style subscription to cart changes:
+ * from this tab, from other tabs, and whenever the tab comes back into view
+ * (the server may have changed the cookie meanwhile, e.g. after a payment).
+ */
 export function subscribeToCart(onChange: () => void): () => void {
+  const channel = openCartChannel();
+  channel?.addEventListener("message", onChange);
   window.addEventListener(CART_CHANGE_EVENT, onChange);
-  return () => window.removeEventListener(CART_CHANGE_EVENT, onChange);
+  window.addEventListener("focus", onChange);
+  document.addEventListener("visibilitychange", onChange);
+  return () => {
+    channel?.close();
+    window.removeEventListener(CART_CHANGE_EVENT, onChange);
+    window.removeEventListener("focus", onChange);
+    document.removeEventListener("visibilitychange", onChange);
+  };
 }

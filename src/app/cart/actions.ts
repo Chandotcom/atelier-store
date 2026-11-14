@@ -7,7 +7,13 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { cartItems, carts, productStock } from "@/db/schema";
 import { CART_COUNT_COOKIE, type CartActionResult } from "@/lib/cart";
-import { CART_COOKIE, CART_COOKIE_MAX_AGE, getCartId, sameSize } from "@/lib/cart-data";
+import {
+  CART_COOKIE,
+  CART_COOKIE_MAX_AGE,
+  getCartCount,
+  getCartId,
+  sameSize,
+} from "@/lib/cart-data";
 
 /*
  * Shopping bag mutations. These are public endpoints: every argument is
@@ -27,11 +33,7 @@ const isId = (value: unknown): value is number =>
 
 /** Recounts the bag and mirrors the total into the cookie the header reads. */
 async function syncCount(cartId: string): Promise<number> {
-  const [row] = await db
-    .select({ count: sql<number>`coalesce(sum(${cartItems.quantity}), 0)::int` })
-    .from(cartItems)
-    .where(eq(cartItems.cartId, cartId));
-  const count = row?.count ?? 0;
+  const count = await getCartCount(cartId);
 
   const jar = await cookies();
   jar.set(CART_COOKIE, cartId, { ...cookieOptions, httpOnly: true });

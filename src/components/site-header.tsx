@@ -14,9 +14,13 @@ export function SiteHeader() {
       </div>
 
       <header className="site-header px-gutter">
-        {/* Left: drawer below lg, inline nav from lg */}
-        <div className="flex items-center">
-          <div className="lg:hidden">
+        {/*
+          Left: inline nav from lg. The drawer trigger stays until 2xl, because
+          below that the inline nav drops the items past PRIMARY_NAV_INLINE_COUNT
+          and the drawer is the only place they are listed.
+        */}
+        <div className="flex items-center lg:gap-4">
+          <div className="2xl:hidden">
             <MobileMenu items={primaryNav} />
           </div>
           <nav aria-label="Primary" className="hidden lg:block">

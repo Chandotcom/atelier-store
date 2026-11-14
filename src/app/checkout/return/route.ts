@@ -2,6 +2,7 @@ import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { CART_COUNT_COOKIE } from "@/lib/cart";
+import { CART_COOKIE, getCartCount } from "@/lib/cart-data";
 import { fulfillCheckoutSession } from "@/lib/orders";
 import { PRODUCTS_TAG } from "@/lib/products";
 import { getStripe } from "@/lib/stripe";
@@ -19,20 +20,29 @@ export async function GET(request: NextRequest) {
   if (!sessionId) return to("/cart");
 
   let paid = false;
+  let processing = false;
   try {
     const session = await getStripe().checkout.sessions.retrieve(sessionId);
     paid = await fulfillCheckoutSession(session);
+    // Delayed methods (e.g. bank debits) complete checkout before the money
+    // arrives. The webhook fulfils the order once it does.
+    processing = !paid && session.status === "complete";
   } catch (error) {
     console.error("[checkout] Could not confirm Stripe session", error);
     return to("/cart");
   }
+  if (processing) return to("/checkout/processing");
   if (!paid) return to("/cart");
 
-  // Stock changed, so the cached catalog is out of date.
-  revalidateTag(PRODUCTS_TAG, "max");
+  // Stock changed, so the cached catalog is out of date. Expire it at once
+  // rather than serving one more stale page; updateTag isn't available here.
+  revalidateTag(PRODUCTS_TAG, { expire: 0 });
 
   const response = to(`/checkout/success?session_id=${encodeURIComponent(sessionId)}`);
-  // The bag was emptied; reset the count the header reads.
-  response.cookies.set(CART_COUNT_COOKIE, "0", { path: "/", sameSite: "lax" });
+  // What was bought has left the bag, but pieces added after checkout started
+  // are still in it, so recount for the header instead of assuming zero.
+  const cartId = request.cookies.get(CART_COOKIE)?.value;
+  const count = cartId ? await getCartCount(cartId) : 0;
+  response.cookies.set(CART_COUNT_COOKIE, String(count), { path: "/", sameSite: "lax" });
   return response;
 }
