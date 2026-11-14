@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { resetWishlist } from "@/lib/wishlist";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function SignOutButton() {
       setPending(false);
       return;
     }
+    resetWishlist();
     router.push("/");
     router.refresh();
   }

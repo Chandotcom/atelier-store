@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
+import { resetWishlist } from "@/lib/wishlist";
 import { Field, FormError } from "./fields";
 
 export function SignInForm() {
@@ -27,6 +28,7 @@ export function SignInForm() {
       setError(error.message ?? "We couldn't sign you in. Please try again.");
       return;
     }
+    resetWishlist();
     router.push("/account");
     router.refresh();
   }

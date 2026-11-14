@@ -137,6 +137,21 @@ export async function getAccessories(): Promise<Product[]> {
   return rows.map(toProduct);
 }
 
+/** The given products, in the order of `ids`. Unknown ids are skipped. */
+export async function getProductsByIds(ids: number[]): Promise<Product[]> {
+  "use cache";
+  cacheTag(PRODUCTS_TAG);
+  cacheLife("hours");
+
+  if (ids.length === 0) return [];
+  const rows = await db.query.products.findMany({
+    where: inArray(products.id, ids),
+    with: withRelations,
+  });
+  const byId = new Map(rows.map((row) => [row.id, toProduct(row)]));
+  return ids.flatMap((id) => byId.get(id) ?? []);
+}
+
 const SEARCH_QUERY_MAX_LENGTH = 64;
 const SEARCH_MAX_TERMS = 6;
 

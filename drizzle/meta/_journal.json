@@ -29,6 +29,13 @@
       "when": 1794552833965,
       "tag": "0003_wide_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794555206612,
+      "tag": "0004_productive_kitty_pryde",
+      "breakpoints": true
     }
   ]
 }

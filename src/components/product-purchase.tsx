@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { addToCart } from "@/app/cart/actions";
 import { notifyCartChanged } from "@/lib/cart";
 import { stockLabel, stockStatus, type Product, type StockStatus } from "@/lib/catalog";
-import { HeartIcon } from "./icons";
+import { WishlistButton } from "./wishlist-button";
 
 const dot: Record<StockStatus, string> = {
   in_stock: "bg-success",
@@ -28,8 +28,9 @@ function StockIndicator({ quantity, prefix }: { quantity: number; prefix?: strin
 
 /**
  * Size selection, stock state and purchase actions. "Add to bag" writes to
- * the real cart. There is no wishlist or back-in-stock backend yet, so those
- * two only acknowledge locally.
+ * the real cart and the wishlist button saves to the customer's account.
+ * There is no back-in-stock backend yet, so "Notify me" only acknowledges
+ * locally.
  */
 export function ProductPurchase({ product }: { product: Product }) {
   const { sizes } = product;
@@ -38,7 +39,6 @@ export function ProductPurchase({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
-  const [saved, setSaved] = useState(false);
   const [notify, setNotify] = useState<"idle" | "form" | "done">("idle");
 
   const soldOut = stockStatus(product.stock) === "out_of_stock";
@@ -165,17 +165,9 @@ export function ProductPurchase({ product }: { product: Product }) {
                 {addError}
               </p>
             )}
-            <button
-              type="button"
-              className="btn btn-secondary btn-lg btn-block"
-              aria-pressed={saved}
-              onClick={() => setSaved((v) => !v)}
-            >
-              <HeartIcon className={`size-4 ${saved ? "fill-current" : ""}`} />
-              {saved ? "Saved to wishlist" : "Save to wishlist"}
-            </button>
           </>
         )}
+        <WishlistButton productId={product.id} />
       </div>
     </div>
   );

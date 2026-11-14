@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { authClient } from "@/lib/auth-client";
+import { resetWishlist } from "@/lib/wishlist";
 import { Field, FormError, MIN_PASSWORD_LENGTH } from "./fields";
 
 export function SignUpForm() {
@@ -28,6 +29,7 @@ export function SignUpForm() {
       return;
     }
     // No email verification yet, so sign-up also signs the customer in.
+    resetWishlist();
     router.push("/account");
     router.refresh();
   }
