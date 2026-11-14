@@ -57,6 +57,35 @@ export async function sendEmail(email: Email): Promise<void> {
   }
 }
 
+/**
+ * Adds an address to the Resend contact list (Audience in the dashboard), which
+ * is where newsletter Broadcasts are sent from. Needs a full-access API key: a
+ * send-only key is rejected. Throws if the contact could not be saved.
+ *
+ * An address that is already a contact is left exactly as it is. Creating it
+ * again would re-subscribe someone who had unsubscribed, and this form is
+ * public, so anyone could do that to an address that isn't theirs.
+ */
+export async function addNewsletterContact(email: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error("RESEND_API_KEY is not set.");
+  const headers = { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+  const url = "https://api.resend.com/contacts";
+
+  const existing = await fetch(`${url}/${encodeURIComponent(email)}`, { headers });
+  if (existing.ok) return;
+  if (existing.status !== 404) {
+    throw new Error(`Resend returned ${existing.status}: ${await existing.text()}`);
+  }
+
+  const created = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ email, unsubscribed: false }),
+  });
+  if (!created.ok) throw new Error(`Resend returned ${created.status}: ${await created.text()}`);
+}
+
 /* ── Messages ─────────────────────────────────────────────────────────── */
 
 export function passwordResetEmail(input: { to: string; url: string }): Email {
