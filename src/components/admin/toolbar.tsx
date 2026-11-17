@@ -44,7 +44,7 @@ export function SearchInput({ placeholder }: { placeholder: string }) {
   }
 
   return (
-    <label className="relative min-w-48 flex-1">
+    <label className="relative min-w-48 flex-1 max-sm:basis-full">
       <span className="sr-only">{placeholder}</span>
       <SearchIcon
         className={`pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted ${pending ? "animate-pulse" : ""}`}
@@ -72,7 +72,7 @@ export function FilterSelect({ param, label, options }: { param: string; label: 
   const current = options.some((o) => o.value === params.get(param)) ? (params.get(param) ?? "") : "";
 
   return (
-    <label className="relative">
+    <label className="relative flex-1 sm:flex-none">
       <span className="sr-only">{label}</span>
       <select
         value={current}
@@ -80,7 +80,7 @@ export function FilterSelect({ param, label, options }: { param: string; label: 
           const href = hrefWith(pathname, window.location.search, param, e.target.value);
           startTransition(() => router.replace(href, { scroll: false }));
         }}
-        className="admin-field w-auto min-w-40 cursor-pointer appearance-none bg-surface pr-9"
+        className="admin-field min-w-36 cursor-pointer sm:w-auto sm:min-w-40 appearance-none bg-surface pr-9"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>

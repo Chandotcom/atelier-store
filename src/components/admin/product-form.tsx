@@ -119,7 +119,7 @@ export function ProductForm({ product, categories }: Props) {
     rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+    <form ref={formRef} onSubmit={onSubmit} className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       <div className="space-y-4">
         <Section title="Details">
           <Input label="Name" name="name" defaultValue={product?.name} maxLength={120} required />

@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
     <div className="flex min-h-screen flex-1 flex-col bg-paper lg:flex-row">
       {/* The sidebar reads the pathname to mark the current section, which isn't
           known while the shell of a dynamic route (orders/[id]) is prerendered. */}
-      <Suspense fallback={<div className="h-14 border-b lg:h-screen lg:w-60 lg:border-r lg:border-b-0" />}>
+      <Suspense fallback={<div className="h-[7.5rem] border-b lg:h-screen lg:w-60 lg:border-r lg:border-b-0" />}>
         <AdminSidebar
           footer={
             <Suspense fallback={<div className="h-10" />}>

@@ -91,40 +91,100 @@ export function EmptyState({ icon, title, hint }: { icon: IconType; title: strin
 
 /**
  * A table with a filled, rounded header row and hairline dividers between
- * rows. Scrolls sideways on small screens rather than squashing columns.
+ * rows. Below `md` it shows `cards` instead (one `<li>` per row, see
+ * `CardRow`), because a phone can't fit the columns. Without `cards` it
+ * scrolls sideways rather than squashing columns.
  */
 export function Table({
   head,
   children,
+  cards,
 }: {
   head: { label: string; right?: boolean; hidden?: boolean }[];
   children: ReactNode;
+  cards?: ReactNode;
 }) {
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[44rem] border-separate border-spacing-0 text-left">
-        <thead>
-          <tr>
-            {head.map((h) => (
-              <th
-                key={h.label}
-                scope="col"
-                className={`h-9 bg-surface px-3 text-[0.8125rem] font-medium text-muted first:rounded-l-[0.5rem] last:rounded-r-[0.5rem] ${
-                  h.right ? "text-right" : ""
-                }`}
-              >
-                {h.hidden ? <span className="sr-only">{h.label}</span> : h.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
+    <>
+      {cards && <ul className="admin-card mt-4 divide-y overflow-hidden md:hidden">{cards}</ul>}
+      {/* `relative` keeps absolutely positioned descendants (the `sr-only`
+          header labels) inside the scroll box; without it they are placed
+          against the page and widen it on small screens. */}
+      <div className={`relative mt-4 overflow-x-auto ${cards ? "hidden md:block" : ""}`}>
+        <table className="w-full min-w-[44rem] border-separate border-spacing-0 text-left">
+          <thead>
+            <tr>
+              {head.map((h) => (
+                <th
+                  key={h.label}
+                  scope="col"
+                  className={`h-9 bg-surface px-3 text-[0.8125rem] font-medium text-muted first:rounded-l-[0.5rem] last:rounded-r-[0.5rem] ${
+                    h.right ? "text-right" : ""
+                  }`}
+                >
+                  {h.hidden ? <span className="sr-only">{h.label}</span> : h.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>{children}</tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
 export const cell = "border-b px-3 py-3 align-middle";
+
+/**
+ * One row of a table's phone layout: `lead` (an icon or image), a title line
+ * with `aside` (an amount) on the right, and `meta` below. A link when
+ * `href` is given; `children` go under it, for controls that can't sit
+ * inside a link.
+ */
+export function CardRow({
+  href,
+  lead,
+  title,
+  aside,
+  meta,
+  children,
+}: {
+  href?: string;
+  lead: ReactNode;
+  title: ReactNode;
+  aside?: ReactNode;
+  meta?: ReactNode;
+  children?: ReactNode;
+}) {
+  const body = (
+    <>
+      {lead}
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0 truncate font-medium">{title}</span>
+          {aside && <span className="shrink-0 font-medium tabular-nums">{aside}</span>}
+        </span>
+        {meta && (
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-muted">{meta}</span>
+        )}
+      </span>
+    </>
+  );
+  const row = "flex items-center gap-3 px-4 py-3";
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className={`${row} hover:bg-surface/60`}>
+          {body}
+        </Link>
+      ) : (
+        <div className={row}>{body}</div>
+      )}
+      {children && <div className="px-4 pb-3">{children}</div>}
+    </li>
+  );
+}
 
 type OrderRow = Awaited<ReturnType<typeof getAdminOrders>>[number];
 
@@ -144,6 +204,28 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
         { label: "Paid", right: true },
         { label: "Actions", hidden: true },
       ]}
+      cards={orders.map((order) => {
+        const items = order.items.reduce((n, i) => n + i.quantity, 0);
+        return (
+          <CardRow
+            key={order.id}
+            href={`/admin/orders/${order.id}`}
+            lead={<IconTile icon={BoxIcon} />}
+            title={formatOrderNumber(order.id)}
+            aside={formatPrice(order.totalCents)}
+            meta={
+              <>
+                <ShippedBadge shipped={Boolean(order.shippedAt)} />
+                <span className="min-w-0 truncate">{order.email ?? "No email"}</span>
+                <span className="whitespace-nowrap">
+                  {items} {items === 1 ? "item" : "items"}
+                  {order.paidAt && ` · ${adminDate.format(order.paidAt)}`}
+                </span>
+              </>
+            }
+          />
+        );
+      })}
     >
       {orders.map((order) => (
         <tr key={order.id} className="hover:bg-surface/60">

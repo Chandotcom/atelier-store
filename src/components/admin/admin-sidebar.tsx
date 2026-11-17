@@ -22,26 +22,26 @@ const groups: Item[][] = [
 ];
 
 const isAdminLink = (href: string) => href.startsWith("/admin");
+const sections = groups.flat().filter((item) => isAdminLink(item.href));
+const exitLinks = groups.flat().filter((item) => !isAdminLink(item.href));
 
 /**
- * The admin area's only navigation: a sidebar from `lg`, and a top bar with a
- * scrolling row of the same links below that. `footer` is the signed-in user,
- * rendered on the server.
+ * The admin area's only navigation: a sidebar from `lg`, and below that a top
+ * bar with the same links (sections as tabs, the rest as icons). `footer` is
+ * the signed-in user, rendered on the server, and only shown in the sidebar.
  */
 export function AdminSidebar({ footer }: { footer?: ReactNode }) {
   const pathname = usePathname();
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : isAdminLink(href) && pathname.startsWith(href);
 
-  const link = (item: Item, compact: boolean) => {
+  const link = (item: Item) => {
     const active = isActive(item.href);
     return (
       <Link
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-2.5 rounded-[0.5rem] px-2.5 text-[0.875rem] whitespace-nowrap transition-colors ${
-          compact ? "h-8" : "h-9"
-        } ${active ? "bg-surface-strong font-medium text-ink" : "text-muted hover:bg-surface hover:text-ink"}`}
+        className={`flex h-9 items-center gap-2.5 rounded-[0.5rem] px-2.5 text-[0.875rem] whitespace-nowrap transition-colors ${active ? "bg-surface-strong font-medium text-ink" : "text-muted hover:bg-surface hover:text-ink"}`}
       >
         <item.icon className="size-4 shrink-0" strokeWidth={1.5} />
         {item.label}
@@ -61,14 +61,45 @@ export function AdminSidebar({ footer }: { footer?: ReactNode }) {
 
   return (
     <>
-      {/* Below lg: brand bar plus one scrolling row of links. */}
+      {/* Below lg: brand bar with the links out of the admin area as icons,
+          then the admin sections as a row of equal tabs. */}
       <header className="sticky top-0 z-30 border-b bg-paper lg:hidden">
-        <div className="flex h-14 items-center px-3">{brand}</div>
-        <nav aria-label="Admin" className="overflow-x-auto border-t px-3 py-2">
-          <ul className="flex gap-1">
-            {groups.flat().map((item) => (
-              <li key={item.href}>{link(item, true)}</li>
+        <div className="flex h-14 items-center justify-between gap-2 px-3">
+          {brand}
+          <ul className="flex items-center gap-1">
+            {exitLinks.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-label={item.label}
+                  title={item.label}
+                  className="flex size-10 items-center justify-center rounded-[0.5rem] text-muted hover:bg-surface hover:text-ink"
+                >
+                  <item.icon className="size-5" strokeWidth={1.5} />
+                </Link>
+              </li>
             ))}
+          </ul>
+        </div>
+        <nav aria-label="Admin" className="border-t px-2 py-1.5">
+          <ul className="grid grid-cols-4 gap-1">
+            {sections.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[0.5rem] text-[0.75rem] transition-colors ${
+                      active ? "bg-surface-strong font-medium text-ink" : "text-muted hover:bg-surface hover:text-ink"
+                    }`}
+                  >
+                    <item.icon className="size-4" strokeWidth={1.5} />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </nav>
       </header>
@@ -80,7 +111,7 @@ export function AdminSidebar({ footer }: { footer?: ReactNode }) {
           {groups.map((group, i) => (
             <ul key={i} className={`space-y-0.5 ${i > 0 ? "mt-3 border-t pt-3" : ""}`}>
               {group.map((item) => (
-                <li key={item.href}>{link(item, false)}</li>
+                <li key={item.href}>{link(item)}</li>
               ))}
             </ul>
           ))}

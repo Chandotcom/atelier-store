@@ -43,15 +43,15 @@ async function Overview() {
     <>
       <PageHeader title="Overview" description={`Welcome back, ${user.name.split(" ")[0]}. Here is how the store is doing.`} />
 
-      <ul className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <ul className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((tile) => (
-          <li key={tile.label}>
-            <Link href={tile.href} className="admin-card block p-5 transition-colors hover:border-subtle">
+          <li key={tile.label} className="min-w-0">
+            <Link href={tile.href} className="admin-card block h-full p-4 transition-colors hover:border-subtle sm:p-5">
               <span className="flex items-center justify-between gap-3 text-[0.8125rem] font-medium text-muted">
                 {tile.label}
-                <tile.icon className="size-4" strokeWidth={1.5} />
+                <tile.icon className="size-4 shrink-0" strokeWidth={1.5} />
               </span>
-              <span className="mt-3 block text-[1.75rem] leading-none font-semibold tracking-tight tabular-nums">
+              <span className="mt-3 block truncate text-[1.375rem] leading-none font-semibold tracking-tight tabular-nums sm:text-[1.75rem]">
                 {tile.value}
               </span>
               <span className="mt-2 block text-[0.8125rem] text-muted">{tile.hint}</span>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { RowMenu } from "@/components/admin/row-menu";
 import { FilterSelect, SearchInput } from "@/components/admin/toolbar";
-import { AdminSkeleton, Badge, cell, EmptyState, PageHeader, Table, Toolbar } from "@/components/admin/ui";
+import { AdminSkeleton, Badge, CardRow, cell, EmptyState, PageHeader, Table, Toolbar } from "@/components/admin/ui";
 import { PlusIcon, TagIcon } from "@/components/icons";
 import { getAdminCategories, getAdminProducts } from "@/lib/admin-data";
 import { formatPrice, type StockStatus } from "@/lib/catalog";
@@ -74,6 +74,29 @@ async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "se
             { label: "Price", right: true },
             { label: "Actions", hidden: true },
           ]}
+          cards={products.map((product) => {
+            const image = product.images[0];
+            return (
+              <CardRow
+                key={product.id}
+                href={`/admin/products/${product.id}`}
+                lead={
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-[0.5rem] border bg-surface">
+                    {image && <Image src={image.src} alt="" fill sizes="3rem" className="object-cover" />}
+                  </span>
+                }
+                title={product.name}
+                aside={formatPrice(product.priceCents)}
+                meta={
+                  <>
+                    <StockBadge status={product.stockStatus} />
+                    <span className="whitespace-nowrap">{product.totalStock} in stock</span>
+                    <span className="whitespace-nowrap">{product.category.name}</span>
+                  </>
+                }
+              />
+            );
+          })}
         >
           {products.map((product) => {
             const image = product.images[0];
@@ -92,13 +115,7 @@ async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "se
                 </td>
                 <td className={`${cell} whitespace-nowrap text-muted`}>{product.category.name}</td>
                 <td className={cell}>
-                  {product.stockStatus === "out_of_stock" ? (
-                    <Badge tone="danger">Sold out</Badge>
-                  ) : product.stockStatus === "low_stock" ? (
-                    <Badge tone="neutral">Low stock</Badge>
-                  ) : (
-                    <Badge tone="success">In stock</Badge>
-                  )}
+                  <StockBadge status={product.stockStatus} />
                 </td>
                 <td className={`${cell} text-right tabular-nums`}>{product.totalStock}</td>
                 <td className={`${cell} text-right tabular-nums`}>{formatPrice(product.priceCents)}</td>
@@ -118,4 +135,10 @@ async function Products({ searchParams }: Pick<PageProps<"/admin/products">, "se
       )}
     </>
   );
+}
+
+function StockBadge({ status }: { status: StockStatus }) {
+  if (status === "out_of_stock") return <Badge tone="danger">Sold out</Badge>;
+  if (status === "low_stock") return <Badge tone="neutral">Low stock</Badge>;
+  return <Badge tone="success">In stock</Badge>;
 }
