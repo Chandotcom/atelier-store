@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { RoleControl } from "@/components/admin/role-control";
 import { FilterSelect, SearchInput } from "@/components/admin/toolbar";
-import { adminDate, AdminSkeleton, Badge, cell, EmptyState, PageHeader, Table, Toolbar } from "@/components/admin/ui";
+import { adminDate, AdminSkeleton, Badge, CardRow, cell, EmptyState, PageHeader, Table, Toolbar } from "@/components/admin/ui";
 import { UsersIcon } from "@/components/icons";
 import { getAdminCustomers } from "@/lib/admin-data";
 import { formatPrice } from "@/lib/catalog";
@@ -56,6 +56,34 @@ async function Customers({ searchParams }: Pick<PageProps<"/admin/customers">, "
             { label: "Joined", right: true },
             { label: "Access", right: true },
           ]}
+          cards={customers.map((customer) => {
+            const isAdmin = (customer.role ?? "").split(",").includes(ADMIN_ROLE);
+            return (
+              <CardRow
+                key={customer.id}
+                lead={<Initial name={customer.name} />}
+                title={customer.name}
+                aside={formatPrice(customer.spentCents)}
+                meta={
+                  <>
+                    <span className="w-full break-all">{customer.email}</span>
+                    {isAdmin ? <Badge tone="success">Admin</Badge> : <Badge tone="neutral">Customer</Badge>}
+                    <span className="whitespace-nowrap">
+                      {customer.orders} {customer.orders === 1 ? "order" : "orders"}
+                    </span>
+                    <span className="whitespace-nowrap">Joined {adminDate.format(customer.createdAt)}</span>
+                  </>
+                }
+              >
+                {customer.id !== me.id && (
+                  // Aligned with the text, past the 2rem initial and its gap.
+                  <div className="pl-11 [&>span]:items-start [&>span]:justify-start">
+                    <RoleControl userId={customer.id} name={customer.name} isAdmin={isAdmin} />
+                  </div>
+                )}
+              </CardRow>
+            );
+          })}
         >
           {customers.map((customer) => {
             const isAdmin = (customer.role ?? "").split(",").includes(ADMIN_ROLE);
@@ -63,12 +91,7 @@ async function Customers({ searchParams }: Pick<PageProps<"/admin/customers">, "
               <tr key={customer.id} className="hover:bg-surface/60">
                 <td className={cell}>
                   <span className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-strong text-[0.8125rem] font-medium"
-                    >
-                      {customer.name.trim().charAt(0).toUpperCase() || "?"}
-                    </span>
+                    <Initial name={customer.name} />
                     <span className="min-w-0">
                       <span className="block truncate font-medium">{customer.name}</span>
                       <span className="block text-[0.8125rem] break-all text-muted">{customer.email}</span>
@@ -97,5 +120,16 @@ async function Customers({ searchParams }: Pick<PageProps<"/admin/customers">, "
         </Table>
       )}
     </>
+  );
+}
+
+function Initial({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-strong text-[0.8125rem] font-medium"
+    >
+      {name.trim().charAt(0).toUpperCase() || "?"}
+    </span>
   );
 }

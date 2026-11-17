@@ -36,7 +36,7 @@ async function Order({ params }: Pick<PageProps<"/admin/orders/[id]">, "params">
         actions={<ShippedBadge shipped={Boolean(order.shippedAt)} />}
       />
 
-      <div className="mt-6 grid items-start gap-4 lg:grid-cols-5">
+      <div className="mt-6 grid grid-cols-1 items-start gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <Section title="Items">
             <OrderItems order={order} />

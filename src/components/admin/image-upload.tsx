@@ -144,7 +144,7 @@ export function ImageUpload({ images, onChange, defaultAlt }: Props) {
               </div>
 
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-center justify-between gap-2 text-[0.8125rem]">
+                <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[0.8125rem]">
                   <span className="font-medium">
                     {i === 0 ? "Listing image" : `Image ${i + 1}`}
                     {row.progress !== undefined && (
